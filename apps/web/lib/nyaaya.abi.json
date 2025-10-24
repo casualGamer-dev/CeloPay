@@ -1,0 +1,100 @@
+[
+  {
+    "type": "function",
+    "name": "createCircle",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "description",
+        "type": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "joinCircle",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "name": "circleId",
+        "type": "bytes32"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "requestLoan",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "name": "circleId",
+        "type": "bytes32"
+      },
+      {
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "name": "installments",
+        "type": "uint8"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "approveLoan",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "bytes32"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "disburse",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "bytes32"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "repay",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "bytes32"
+      },
+      {
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  }
+]

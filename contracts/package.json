@@ -1,0 +1,21 @@
+{
+  "name": "contracts",
+  "version": "1.0.1",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:alfajores": "hardhat run scripts/deploy.js --network alfajores"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.2",
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.6.1",
+    "hardhat": "^2.26.3"
+  },
+  "dependencies": {
+    "ethers": "^6.15.0"
+  }
+}
