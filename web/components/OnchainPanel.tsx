@@ -1,10 +1,10 @@
 'use client';
-import abi from '../lib/nyaaya.abi.json';
+import abi from '../lib/celo.abi.json';
 import { useAccount, useWriteContract } from 'wagmi';
 import { celoAlfajores } from 'viem/chains';
 import { useState } from 'react';
 
-const addr = process.env.NEXT_PUBLIC_NYAAYA_ADDRESS as `0x${string}` | undefined;
+const addr = process.env.NEXT_PUBLIC_CELO_ADDRESS as `0x${string}` | undefined;
 
 export default function OnchainPanel() {
   const { address, isConnected } = useAccount();
@@ -14,7 +14,7 @@ export default function OnchainPanel() {
 
   if (!addr) return (
     <div className="text-gray-500">
-      On-chain is disabled — set <code>NEXT_PUBLIC_NYAAYA_ADDRESS</code> in <code>.env</code>.
+      On-chain is disabled — set <code>NEXT_PUBLIC_CELO_ADDRESS</code> in <code>.env</code>.
     </div>
   );
   if (!isConnected || !account) return <div className="text-gray-500">Connect wallet to use on-chain actions.</div>;

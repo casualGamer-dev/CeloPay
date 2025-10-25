@@ -37,10 +37,10 @@
         "IERC20"
       ]
     },
-    "C:\\Users\\nilad\\OneDrive\\Documents\\GitHub\\CeloPay\\contracts\\contracts\\NyaayaPay.sol": {
+    "C:\\Users\\nilad\\OneDrive\\Documents\\GitHub\\CeloPay\\contracts\\contracts\\CeloPay.sol": {
       "lastModificationDate": 1761375959924,
       "contentHash": "a75b0837a5d97ae76e8c10ef0a885cd1",
-      "sourceName": "contracts/NyaayaPay.sol",
+      "sourceName": "contracts/CeloPay.sol",
       "solcConfig": {
         "version": "0.8.24",
         "settings": {
@@ -72,7 +72,7 @@
         "^0.8.24"
       ],
       "artifacts": [
-        "NyaayaPay"
+        "CeloPay"
       ]
     }
   }
