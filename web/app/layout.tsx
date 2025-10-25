@@ -20,7 +20,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <Link href="/dashboard">Dashboard</Link>
                   <Link href="/circles">Circles</Link>
                   <Link href="/loans">Loans</Link>
-                  <Link href="/loans">Activity</Link>
+                  <Link href="/activity">Activity</Link>
+                    <Link href="/my">My Activity</Link>
                 </nav>
               </div>
               <Connect />
