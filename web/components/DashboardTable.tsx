@@ -9,6 +9,10 @@ import { celoAlfajores } from 'viem/chains';
 import toast from 'react-hot-toast';
 import { useMemo, useState } from 'react';
 
+import LoanTimeline from './LoanTimeline';
+import Drawer from './Drawer';
+
+
 type LoanRow = {
   rid: `0x${string}`;
   circleId: `0x${string}`;
@@ -38,6 +42,7 @@ function TimeCell({ ts }: { ts?: number }) {
   return <span className="text-xs text-gray-600">{d.toLocaleString()}</span>;
 }
 
+
 export default function DashboardTable({
   contract,
   rows,
@@ -57,6 +62,8 @@ export default function DashboardTable({
   const [txByReq, setTxByReq] = useState<Record<string, `0x${string}`>>({});
 
   const myLower = (me || '').toLowerCase();
+
+const [openRid, setOpenRid] = useState<`0x${string}` | null>(null);
 
 const roleTags = (row: LoanRow) => {
   const tags: string[] = [];
@@ -181,7 +188,15 @@ const roleTags = (row: LoanRow) => {
                     <button className="btn" disabled={disabled || !canRepay} onClick={() => repay(row.rid, cUsd)} title="Requires cUSD allowance">
                       Repay
                     </button>
-                    <a className="btn" href={`/loans?r=${row.rid}`}>Open</a>
+                    <button className="btn" onClick={() => setOpenRid(row.rid)}>Timeline</button>
+<a className="btn" href={`/loans?r=${row.rid}`}>Open</a>
+
+{openRid === row.rid && (
+  <Drawer open onClose={() => setOpenRid(null)} title={`Timeline – ${row.rid.slice(0,10)}…`}>
+    <LoanTimeline requestId={row.rid} />
+  </Drawer>
+)}
+              
                   </div>
                   {lastTx && (
                     <div className="mt-1">

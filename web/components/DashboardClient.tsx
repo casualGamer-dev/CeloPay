@@ -6,6 +6,9 @@ import DashboardTable from './DashboardTable';
 import Copy from './Copy';
 import { short } from '../lib/utils';
 import { useMemo, useState } from 'react';
+import Skeleton from './Skeleton';
+
+
 
 type CircleRow = { id: `0x${string}`; name: string; createdBy: `0x${string}`; members: `0x${string}`[]; };
 type LoanRow = {
@@ -70,9 +73,11 @@ export default function DashboardClient({ data }: { data: { contract: `0x${strin
           <h2 className="text-lg font-semibold">Circles</h2>
           {isLoading && <span className="text-xs text-gray-500">Refreshing…</span>}
         </div>
-        {myCircles.length === 0 ? (
-          <div className="text-sm text-gray-600">No circles found.</div>
-        ) : (
+       {isLoading ? (
+  <Skeleton rows={4} />
+) : myCircles.length === 0 ? (
+  <div className="text-sm text-gray-600">No circles found.</div>
+) : (
           <div className="overflow-x-auto">
             <table className="table">
               <thead><tr><th>circleId</th><th>Name</th><th>Creator</th><th>Members</th></tr></thead>
