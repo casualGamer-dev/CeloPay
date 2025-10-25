@@ -61,8 +61,10 @@ It features a **Next.js + Tailwind CSS** web front-end, integrated with **smart 
 cd web
 npm install
 npm run dev
-
+```
+---
 ## Contributions
+
 Tamanash Das
 Avishek Chakraborty
 
