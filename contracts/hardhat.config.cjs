@@ -2,6 +2,8 @@
 require('dotenv').config();
 require('@nomicfoundation/hardhat-ethers');
 
+const cleanPk = (process.env.PRIVATE_KEY || '').trim().replace(/^['"]|['"]$/g, '');
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
@@ -12,7 +14,7 @@ module.exports = {
     alfajores: {
       url: process.env.CELO_RPC || 'https://alfajores-forno.celo-testnet.org',
       chainId: 44787,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      accounts: cleanPk ? [cleanPk] : [],
     },
   },
 };

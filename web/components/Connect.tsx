@@ -1,4 +1,3 @@
-
 'use client';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
@@ -19,10 +18,8 @@ export default function Connect() {
     );
   }
 
-  const connector = injected();
-
   return (
-    <button className="btn" onClick={() => connect({ connector })}>
+    <button className="btn" onClick={() => connect({ connector: injected() })}>
       {isPending ? 'Connecting…' : 'Connect Wallet'}
     </button>
   );

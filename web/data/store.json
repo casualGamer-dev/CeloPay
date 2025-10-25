@@ -1,4 +1,16 @@
 {
   "circles": [],
-  "loans": []
+  "loans": [
+    {
+      "id": "1761376688202-luwbrho9h7",
+      "borrower": "0x0",
+      "circleId": "amar pod",
+      "amountCUSD": "500",
+      "installments": 3,
+      "approvals": [],
+      "status": "PENDING",
+      "createdAt": 1761376688202,
+      "dueDates": []
+    }
+  ]
 }
