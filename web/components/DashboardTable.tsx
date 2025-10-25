@@ -4,14 +4,12 @@ import abi from '../lib/celo.abi.json';
 import { fromWeiToCUSD, short, toINRString } from '../lib/utils';
 import Copy from './Copy';
 import ExplorerLink from './ExplorerLink';
+import Drawer from './Drawer';
+import LoanTimeline from './LoanTimeline';
 import { useAccount, useWriteContract } from 'wagmi';
 import { celoAlfajores } from 'viem/chains';
 import toast from 'react-hot-toast';
-import { useMemo, useState } from 'react';
-
-import LoanTimeline from './LoanTimeline';
-import Drawer from './Drawer';
-
+import { useState } from 'react';
 
 type LoanRow = {
   rid: `0x${string}`;
@@ -24,7 +22,13 @@ type LoanRow = {
   timestamp?: number; // unix seconds
 };
 
-function Badge({ kind, children }: { kind: 'pending'|'approved'|'repaid'|'role'; children: React.ReactNode }) {
+function Badge({
+  kind,
+  children,
+}: {
+  kind: 'pending' | 'approved' | 'repaid' | 'role';
+  children: React.ReactNode;
+}) {
   const cls =
     kind === 'repaid'
       ? 'bg-emerald-100 text-emerald-700'
@@ -42,7 +46,6 @@ function TimeCell({ ts }: { ts?: number }) {
   return <span className="text-xs text-gray-600">{d.toLocaleString()}</span>;
 }
 
-
 export default function DashboardTable({
   contract,
   rows,
@@ -56,68 +59,97 @@ export default function DashboardTable({
 }) {
   const { address, isConnected } = useAccount();
   const { writeContractAsync, isPending } = useWriteContract();
-  const disabled = !isConnected || !address || isPending;
 
-  // keep the last txHash per requestId in local state
-  const [txByReq, setTxByReq] = useState<Record<string, `0x${string}`>>({});
-
-  const myLower = (me || '').toLowerCase();
-
-const [openRid, setOpenRid] = useState<`0x${string}` | null>(null);
-
-const roleTags = (row: LoanRow) => {
-  const tags: string[] = [];
+  const disabledGlobal = !isConnected || !address || isPending;
   const meL = (me || '').toLowerCase();
-  if (!meL) return tags;
 
-  const borrowerL = row.borrower.toLowerCase();
-  if (borrowerL === meL) tags.push('Borrower');
+  // UI: store last tx by request id, and timeline drawer state
+  const [txByReq, setTxByReq] = useState<Record<string, `0x${string}`>>({});
+  const [openRid, setOpenRid] = useState<`0x${string}` | null>(null);
 
-  // Approver if your address is among approvals
-  if (row.approvals.some(a => a.toLowerCase() === meL)) tags.push('Approver');
+  const isBorrower = (row: LoanRow) => meL && row.borrower.toLowerCase() === meL;
+  const iAmMember = (row: LoanRow) => myCircleIds.has(row.circleId.toLowerCase());
 
-  // Member if your wallet belongs to the loan's circle (from myCircleIds)
-  if (myCircleIds.has(row.circleId.toLowerCase())) tags.push('Member');
+  // ✅ Rules you asked for:
+  // - Borrower CANNOT approve or disburse
+  // - Only borrower can see repay button
+  const canApprove = (row: LoanRow) =>
+    !row.repaid && !row.approved && iAmMember(row) && !isBorrower(row);
 
-  return tags;
-};
+  const canDisburse = (row: LoanRow) =>
+    !row.repaid && row.approved && !isBorrower(row);
+
+  const canRepay = (row: LoanRow) => !row.repaid && isBorrower(row);
+
+  const roleTags = (row: LoanRow) => {
+    const tags: string[] = [];
+    if (isBorrower(row)) tags.push('Borrower');
+    if (row.approvals.some((a) => a.toLowerCase() === meL)) tags.push('Approver');
+    if (iAmMember(row)) tags.push('Member');
+    return tags;
+  };
+
   const approveLoan = async (rid: `0x${string}`) => {
     try {
-      const hash = await toast.promise(
+      const hash = (await toast.promise(
         writeContractAsync({
-          abi, address: contract, functionName: 'approveLoan',
-          args: [rid], account: address as `0x${string}`, chain: celoAlfajores,
+          abi,
+          address: contract,
+          functionName: 'approveLoan',
+          args: [rid],
+          account: address as `0x${string}`,
+          chain: celoAlfajores,
         }),
-        { loading: 'Approving…', success: 'Approval submitted', error: 'Approval failed' }
-      ) as `0x${string}`;
-      setTxByReq(prev => ({ ...prev, [rid]: hash }));
+        {
+          loading: 'Approving…',
+          success: 'Approval submitted',
+          error: 'Approval failed',
+        }
+      )) as `0x${string}`;
+      setTxByReq((p) => ({ ...p, [rid]: hash }));
     } catch {}
   };
 
   const disburse = async (rid: `0x${string}`) => {
     try {
-      const hash = await toast.promise(
+      const hash = (await toast.promise(
         writeContractAsync({
-          abi, address: contract, functionName: 'disburse',
-          args: [rid], account: address as `0x${string}`, chain: celoAlfajores,
+          abi,
+          address: contract,
+          functionName: 'disburse',
+          args: [rid],
+          account: address as `0x${string}`,
+          chain: celoAlfajores,
         }),
-        { loading: 'Disbursing…', success: 'Disburse submitted', error: 'Disburse failed' }
-      ) as `0x${string}`;
-      setTxByReq(prev => ({ ...prev, [rid]: hash }));
+        {
+          loading: 'Disbursing…',
+          success: 'Disburse submitted',
+          error: 'Disburse failed',
+        }
+      )) as `0x${string}`;
+      setTxByReq((p) => ({ ...p, [rid]: hash }));
     } catch {}
   };
 
   const repay = async (rid: `0x${string}`, amountCUSD: string) => {
     const { toWeiFromCUSD } = await import('../lib/utils');
     try {
-      const hash = await toast.promise(
+      const hash = (await toast.promise(
         writeContractAsync({
-          abi, address: contract, functionName: 'repay',
-          args: [rid, toWeiFromCUSD(amountCUSD)], account: address as `0x${string}`, chain: celoAlfajores,
+          abi,
+          address: contract,
+          functionName: 'repay',
+          args: [rid, toWeiFromCUSD(amountCUSD)],
+          account: address as `0x${string}`,
+          chain: celoAlfajores,
         }),
-        { loading: 'Repaying…', success: 'Repay submitted', error: 'Repay failed' }
-      ) as `0x${string}`;
-      setTxByReq(prev => ({ ...prev, [rid]: hash }));
+        {
+          loading: 'Repaying…',
+          success: 'Repay submitted',
+          error: 'Repay failed',
+        }
+      )) as `0x${string}`;
+      setTxByReq((p) => ({ ...p, [rid]: hash }));
     } catch {}
   };
 
@@ -141,9 +173,6 @@ const roleTags = (row: LoanRow) => {
           {rows.map((row) => {
             const cUsd = fromWeiToCUSD(BigInt(row.amountWei));
             const inr = toINRString(cUsd);
-            const canApprove = !row.repaid && !row.approved;
-            const canDisburse = row.approved && !row.repaid;
-            const canRepay = !row.repaid;
             const roles = roleTags(row);
             const lastTx = txByReq[row.rid];
 
@@ -155,7 +184,9 @@ const roleTags = (row: LoanRow) => {
                 <td className="text-xs">{short(row.circleId)}</td>
                 <td className="text-xs">
                   {short(row.borrower)}
-                  <div><ExplorerLink addr={row.borrower} /></div>
+                  <div>
+                    <ExplorerLink addr={row.borrower} />
+                  </div>
                 </td>
                 <td>
                   <div>{cUsd} cUSD</div>
@@ -171,37 +202,76 @@ const roleTags = (row: LoanRow) => {
                     <Badge kind="pending">Pending</Badge>
                   )}
                 </td>
-                <td><TimeCell ts={row.timestamp} /></td>
+                <td>
+                  <TimeCell ts={row.timestamp} />
+                </td>
                 <td className="space-x-1">
-                  {roles.length === 0 ? <span className="text-xs text-gray-400">—</span> :
-                    roles.map(r => <Badge key={r} kind="role">{r}</Badge>)
-                  }
+                  {roles.length === 0 ? (
+                    <span className="text-xs text-gray-400">—</span>
+                  ) : (
+                    roles.map((r) => (
+                      <Badge key={r} kind="role">
+                        {r}
+                      </Badge>
+                    ))
+                  )}
                 </td>
                 <td>
                   <div className="flex flex-col md:flex-row gap-2 justify-end">
-                    <button className="btn" disabled={disabled || !canApprove} onClick={() => approveLoan(row.rid)}>
+                    {/* Approve — hidden/disabled for borrower */}
+                    <button
+                      className={`btn ${canApprove(row) ? 'btn-primary' : ''}`}
+                      disabled={disabledGlobal || !canApprove(row)}
+                      onClick={() => approveLoan(row.rid)}
+                      title={isBorrower(row) ? 'Borrower cannot approve own loan' : undefined}
+                    >
                       Approve
                     </button>
-                    <button className="btn" disabled={disabled || !canDisburse} onClick={() => disburse(row.rid)} title="Requires cUSD allowance">
+
+                    {/* Disburse — hidden/disabled for borrower */}
+                    <button
+                      className={`btn ${canDisburse(row) ? 'btn-primary' : ''}`}
+                      disabled={disabledGlobal || !canDisburse(row)}
+                      onClick={() => disburse(row.rid)}
+                      title={isBorrower(row) ? 'Borrower cannot disburse own loan' : 'Requires cUSD allowance'}
+                    >
                       Disburse
                     </button>
-                    <button className="btn" disabled={disabled || !canRepay} onClick={() => repay(row.rid, cUsd)} title="Requires cUSD allowance">
-                      Repay
-                    </button>
-                    <button className="btn" onClick={() => setOpenRid(row.rid)}>Timeline</button>
-<a className="btn" href={`/loans?r=${row.rid}`}>Open</a>
 
-{openRid === row.rid && (
-  <Drawer open onClose={() => setOpenRid(null)} title={`Timeline – ${row.rid.slice(0,10)}…`}>
-    <LoanTimeline requestId={row.rid} />
-  </Drawer>
-)}
-              
+                    {/* Repay — ONLY borrower sees this button */}
+                    {isBorrower(row) && (
+                      <button
+                        className={`btn ${canRepay(row) ? 'btn-primary' : ''}`}
+                        disabled={disabledGlobal || !canRepay(row)}
+                        onClick={() => repay(row.rid, cUsd)}
+                        title="Requires cUSD allowance"
+                      >
+                        Repay
+                      </button>
+                    )}
+
+                    <button className="btn" onClick={() => setOpenRid(row.rid)}>
+                      Timeline
+                    </button>
+                    <a className="btn" href={`/loans?r=${row.rid}`}>
+                      Open
+                    </a>
                   </div>
+
                   {lastTx && (
                     <div className="mt-1">
                       <ExplorerLink tx={lastTx} />
                     </div>
+                  )}
+
+                  {openRid === row.rid && (
+                    <Drawer
+                      open
+                      onClose={() => setOpenRid(null)}
+                      title={`Timeline – ${row.rid.slice(0, 10)}…`}
+                    >
+                      <LoanTimeline requestId={row.rid} />
+                    </Drawer>
                   )}
                 </td>
               </tr>
