@@ -9,7 +9,7 @@ export const CUSD = (process.env.NEXT_PUBLIC_CUSD_ADDRESS ||
 
 /** Converts user input (in string cUSD) → bigint in wei */
 export const toWeiFromCUSD = (amount: string) =>
-  parseUnits(amount || '0', CUSD_DECIMALS);
+  parseUnits((amount || '0').trim() || '0', CUSD_DECIMALS);
 
 /** Converts bigint wei → string cUSD */
 export const fromWeiToCUSD = (wei: bigint) =>
@@ -28,3 +28,14 @@ export const isBytes32 = (v: string | null) =>
 /** Short address or ID (0x1234…abcd) */
 export const short = (v: string, n = 6) =>
   v?.length ? `${v.slice(0, 2 + n)}…${v.slice(-n)}` : v;
+
+export const isAddress = (v: string): v is `0x${string}` =>
+  /^0x[0-9a-fA-F]{40}$/.test(v);
+
+
+export const INR_PER_CUSD = Number(process.env.NEXT_PUBLIC_INR_PER_CUSD || 83);
+export const toINRString = (cusd: string | number) => {
+  const n = typeof cusd === 'string' ? parseFloat(cusd || '0') : cusd;
+  const inr = isFinite(n) ? n * INR_PER_CUSD : 0;
+  return `₹${Math.round(inr).toLocaleString('en-IN')}`;
+};
