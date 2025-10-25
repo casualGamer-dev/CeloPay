@@ -59,7 +59,7 @@ export default function CirclesPage() {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="card p-6 space-y-3">
-        <h3 className="text-lg font-semibold">Create Circle</h3>
+        <h3 className="text-lg font-semibold">Create Credit Circle</h3>
         <input className="input" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Name" />
         <input className="input" value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Description" />
         <div className="text-xs text-gray-600">
@@ -79,7 +79,7 @@ export default function CirclesPage() {
       </div>
 
       <div className="card p-6 space-y-3">
-        <h3 className="text-lg font-semibold">Join Circle</h3>
+        <h3 className="text-lg font-semibold">Join Credit Circle</h3>
         <input className="input" value={joinId} onChange={(e)=>setJoinId(e.target.value)} placeholder="Circle ID (0x… bytes32)" />
         <button
           disabled={!addr || !isConnected || !account || isPending}

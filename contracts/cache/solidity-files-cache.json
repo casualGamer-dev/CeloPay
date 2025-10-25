@@ -37,10 +37,46 @@
         "IERC20"
       ]
     },
-    "C:\\Users\\nilad\\OneDrive\\Documents\\GitHub\\CeloPay\\contracts\\contracts\\CeloPay.sol": {
-      "lastModificationDate": 1761375959924,
-      "contentHash": "a75b0837a5d97ae76e8c10ef0a885cd1",
-      "sourceName": "contracts/CeloPay.sol",
+    "C:\\Users\\nilad\\OneDrive\\Documents\\GitHub\\CeloPay\\contracts\\contracts\\ChatStore.sol": {
+      "lastModificationDate": 1761428529009,
+      "contentHash": "b03a6cde99894a23279325c528c6c879",
+      "sourceName": "contracts/ChatStore.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ChatStore"
+      ]
+    },
+    "C:\\Users\\nilad\\OneDrive\\Documents\\GitHub\\CeloPay\\contracts\\contracts\\NyaayaPay.sol": {
+      "lastModificationDate": 1761428531940,
+      "contentHash": "8241a3058aa7de6a6a4522d756bfaa2b",
+      "sourceName": "contracts/NyaayaPay.sol",
       "solcConfig": {
         "version": "0.8.24",
         "settings": {
