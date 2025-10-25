@@ -55,5 +55,11 @@ It features a **Next.js + Tailwind CSS** web front-end, integrated with **smart 
 
 ---
 
-## 📂 Project Structure
+## 📦 Getting Started (Web)
+
+```bash
+cd web
+npm install
+npm run dev```
+
 
