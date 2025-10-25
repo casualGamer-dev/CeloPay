@@ -1,10 +1,13 @@
 'use client';
+
+import { Skeleton as MUISkeleton, Stack } from '@mui/material';
+
 export default function Skeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="animate-pulse space-y-2">
+    <Stack spacing={1}>
       {[...Array(rows)].map((_, i) => (
-        <div key={i} className="h-8 bg-gray-100 rounded" />
+        <MUISkeleton key={i} variant="rounded" height={32} />
       ))}
-    </div>
+    </Stack>
   );
 }

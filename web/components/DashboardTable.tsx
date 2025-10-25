@@ -11,6 +11,26 @@ import { celoAlfajores } from 'viem/chains';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 
+// MUI
+import {
+  Box,
+  Stack,
+  Typography,
+  Button,
+  Chip,
+  Tooltip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Card,
+  CardContent,
+  Divider,
+} from '@mui/material';
+
 type LoanRow = {
   rid: `0x${string}`;
   circleId: `0x${string}`;
@@ -22,28 +42,28 @@ type LoanRow = {
   timestamp?: number; // unix seconds
 };
 
-function Badge({
-  kind,
-  children,
+function StatusChip({
+  status,
 }: {
-  kind: 'pending' | 'approved' | 'repaid' | 'role';
-  children: React.ReactNode;
+  status: 'pending' | 'approved' | 'repaid';
 }) {
-  const cls =
-    kind === 'repaid'
-      ? 'bg-emerald-100 text-emerald-700'
-      : kind === 'approved'
-      ? 'bg-sky-100 text-sky-700'
-      : kind === 'role'
-      ? 'bg-purple-100 text-purple-700'
-      : 'bg-gray-100 text-gray-700';
-  return <span className={`px-2 py-1 rounded text-xs ${cls}`}>{children}</span>;
+  const map: Record<typeof status, { label: string; color: 'default' | 'success' | 'info' }> = {
+    pending: { label: 'Pending',  color: 'default' },
+    approved:{ label: 'Approved', color: 'info'    },
+    repaid:  { label: 'Repaid',   color: 'success' },
+  };
+  const s = map[status];
+  return <Chip size="small" variant="outlined" color={s.color} label={s.label} />;
+}
+
+function RoleChip({ label }: { label: string }) {
+  return <Chip size="small" variant="outlined" color="secondary" label={label} />;
 }
 
 function TimeCell({ ts }: { ts?: number }) {
-  if (!ts) return <span className="text-xs text-gray-500">—</span>;
+  if (!ts) return <Typography variant="caption" color="text.secondary">—</Typography>;
   const d = new Date(ts * 1000);
-  return <span className="text-xs text-gray-600">{d.toLocaleString()}</span>;
+  return <Typography variant="caption" color="text.secondary">{d.toLocaleString()}</Typography>;
 }
 
 export default function DashboardTable({
@@ -63,14 +83,14 @@ export default function DashboardTable({
   const disabledGlobal = !isConnected || !address || isPending;
   const meL = (me || '').toLowerCase();
 
-  // UI: store last tx by request id, and timeline drawer state
+  // UI state
   const [txByReq, setTxByReq] = useState<Record<string, `0x${string}`>>({});
   const [openRid, setOpenRid] = useState<`0x${string}` | null>(null);
 
   const isBorrower = (row: LoanRow) => meL && row.borrower.toLowerCase() === meL;
   const iAmMember = (row: LoanRow) => myCircleIds.has(row.circleId.toLowerCase());
 
-  // ✅ Rules you asked for:
+  // Rules:
   // - Borrower CANNOT approve or disburse
   // - Only borrower can see repay button
   const canApprove = (row: LoanRow) =>
@@ -100,11 +120,7 @@ export default function DashboardTable({
           account: address as `0x${string}`,
           chain: celoAlfajores,
         }),
-        {
-          loading: 'Approving…',
-          success: 'Approval submitted',
-          error: 'Approval failed',
-        }
+        { loading: 'Approving…', success: 'Approval submitted', error: 'Approval failed' }
       )) as `0x${string}`;
       setTxByReq((p) => ({ ...p, [rid]: hash }));
     } catch {}
@@ -121,11 +137,7 @@ export default function DashboardTable({
           account: address as `0x${string}`,
           chain: celoAlfajores,
         }),
-        {
-          loading: 'Disbursing…',
-          success: 'Disburse submitted',
-          error: 'Disburse failed',
-        }
+        { loading: 'Disbursing…', success: 'Disburse submitted', error: 'Disburse failed' }
       )) as `0x${string}`;
       setTxByReq((p) => ({ ...p, [rid]: hash }));
     } catch {}
@@ -143,146 +155,200 @@ export default function DashboardTable({
           account: address as `0x${string}`,
           chain: celoAlfajores,
         }),
-        {
-          loading: 'Repaying…',
-          success: 'Repay submitted',
-          error: 'Repay failed',
-        }
+        { loading: 'Repaying…', success: 'Repay submitted', error: 'Repay failed' }
       )) as `0x${string}`;
       setTxByReq((p) => ({ ...p, [rid]: hash }));
     } catch {}
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="table">
-        <thead>
-          <tr>
-            <th>requestId</th>
-            <th>circleId</th>
-            <th>Borrower</th>
-            <th>Amount</th>
-            <th>Approvals</th>
-            <th>Status</th>
-            <th>Time</th>
-            <th>Roles</th>
-            <th className="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const cUsd = fromWeiToCUSD(BigInt(row.amountWei));
-            const inr = toINRString(cUsd);
-            const roles = roleTags(row);
-            const lastTx = txByReq[row.rid];
+    <Card>
+      <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+        <TableContainer component={Paper}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>requestId</TableCell>
+                <TableCell>circleId</TableCell>
+                <TableCell>Borrower</TableCell>
+                <TableCell>Amount</TableCell>
+                <TableCell>Approvals</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Time</TableCell>
+                <TableCell>Roles</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
 
-            return (
-              <tr key={row.rid}>
-                <td className="text-xs break-all">
-                  {row.rid} <Copy value={row.rid} />
-                </td>
-                <td className="text-xs">{short(row.circleId)}</td>
-                <td className="text-xs">
-                  {short(row.borrower)}
-                  <div>
-                    <ExplorerLink addr={row.borrower} />
-                  </div>
-                </td>
-                <td>
-                  <div>{cUsd} cUSD</div>
-                  <div className="text-xs text-gray-500">{inr}</div>
-                </td>
-                <td className="text-xs">{row.approvals.map(short).join(', ') || '—'}</td>
-                <td>
-                  {row.repaid ? (
-                    <Badge kind="repaid">Repaid</Badge>
-                  ) : row.approved ? (
-                    <Badge kind="approved">Approved</Badge>
-                  ) : (
-                    <Badge kind="pending">Pending</Badge>
-                  )}
-                </td>
-                <td>
-                  <TimeCell ts={row.timestamp} />
-                </td>
-                <td className="space-x-1">
-                  {roles.length === 0 ? (
-                    <span className="text-xs text-gray-400">—</span>
-                  ) : (
-                    roles.map((r) => (
-                      <Badge key={r} kind="role">
-                        {r}
-                      </Badge>
-                    ))
-                  )}
-                </td>
-                <td>
-                  <div className="flex flex-col md:flex-row gap-2 justify-end">
-                    {/* Approve — hidden/disabled for borrower */}
-                    <button
-                      className={`btn ${canApprove(row) ? 'btn-primary' : ''}`}
-                      disabled={disabledGlobal || !canApprove(row)}
-                      onClick={() => approveLoan(row.rid)}
-                      title={isBorrower(row) ? 'Borrower cannot approve own loan' : undefined}
-                    >
-                      Approve
-                    </button>
+            <TableBody>
+              {rows.map((row) => {
+                const cUsd = fromWeiToCUSD(BigInt(row.amountWei));
+                const inr = toINRString(cUsd);
+                const roles = roleTags(row);
+                const lastTx = txByReq[row.rid];
 
-                    {/* Disburse — hidden/disabled for borrower */}
-                    <button
-                      className={`btn ${canDisburse(row) ? 'btn-primary' : ''}`}
-                      disabled={disabledGlobal || !canDisburse(row)}
-                      onClick={() => disburse(row.rid)}
-                      title={isBorrower(row) ? 'Borrower cannot disburse own loan' : 'Requires cUSD allowance'}
-                    >
-                      Disburse
-                    </button>
+                return (
+                  <TableRow key={row.rid} hover>
+                    <TableCell sx={{ wordBreak: 'break-all' }}>
+                      <Typography variant="caption" component="span">
+                        {row.rid}
+                      </Typography>{' '}
+                      <Copy value={row.rid} />
+                    </TableCell>
 
-                    {/* Repay — ONLY borrower sees this button */}
-                    {isBorrower(row) && (
-                      <button
-                        className={`btn ${canRepay(row) ? 'btn-primary' : ''}`}
-                        disabled={disabledGlobal || !canRepay(row)}
-                        onClick={() => repay(row.rid, cUsd)}
-                        title="Requires cUSD allowance"
+                    <TableCell>
+                      <Typography variant="caption">{short(row.circleId)}</Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="caption">{short(row.borrower)}</Typography>
+                      <Box>
+                        <ExplorerLink addr={row.borrower} />
+                      </Box>
+                    </TableCell>
+
+                    <TableCell>
+                      <Stack spacing={0.25}>
+                        <Typography variant="body2">{cUsd} cUSD</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {inr}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="caption">
+                        {row.approvals.map(short).join(', ') || '—'}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <StatusChip
+                        status={
+                          row.repaid ? 'repaid' : row.approved ? 'approved' : 'pending'
+                        }
+                      />
+                    </TableCell>
+
+                    <TableCell>
+                      <TimeCell ts={row.timestamp} />
+                    </TableCell>
+
+                    <TableCell>
+                      {roles.length === 0 ? (
+                        <Typography variant="caption" color="text.secondary">—</Typography>
+                      ) : (
+                        <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
+                          {roles.map((r) => (
+                            <RoleChip key={r} label={r} />
+                          ))}
+                        </Stack>
+                      )}
+                    </TableCell>
+
+                    <TableCell align="right">
+                      <Stack
+                        direction={{ xs: 'column', md: 'row' }}
+                        spacing={1}
+                        justifyContent="flex-end"
+                        alignItems={{ xs: 'stretch', md: 'center' }}
                       >
-                        Repay
-                      </button>
-                    )}
+                        <Tooltip
+                          title={isBorrower(row) ? 'Borrower cannot approve own loan' : ''}
+                        >
+                          <span>
+                            <Button
+                              size="small"
+                              variant={canApprove(row) ? 'contained' : 'outlined'}
+                              disabled={disabledGlobal || !canApprove(row)}
+                              onClick={() => approveLoan(row.rid)}
+                            >
+                              Approve
+                            </Button>
+                          </span>
+                        </Tooltip>
 
-                    <button className="btn" onClick={() => setOpenRid(row.rid)}>
-                      Timeline
-                    </button>
-                    <a className="btn" href={`/loans?r=${row.rid}`}>
-                      Open
-                    </a>
-                  </div>
+                        <Tooltip
+                          title={
+                            isBorrower(row)
+                              ? 'Borrower cannot disburse own loan'
+                              : 'Requires cUSD allowance'
+                          }
+                        >
+                          <span>
+                            <Button
+                              size="small"
+                              variant={canDisburse(row) ? 'contained' : 'outlined'}
+                              disabled={disabledGlobal || !canDisburse(row)}
+                              onClick={() => disburse(row.rid)}
+                            >
+                              Disburse
+                            </Button>
+                          </span>
+                        </Tooltip>
 
-                  {lastTx && (
-                    <div className="mt-1">
-                      <ExplorerLink tx={lastTx} />
-                    </div>
-                  )}
+                        {isBorrower(row) && (
+                          <Tooltip title="Requires cUSD allowance">
+                            <span>
+                              <Button
+                                size="small"
+                                variant={canRepay(row) ? 'contained' : 'outlined'}
+                                disabled={disabledGlobal || !canRepay(row)}
+                                onClick={() => repay(row.rid, cUsd)}
+                              >
+                                Repay
+                              </Button>
+                            </span>
+                          </Tooltip>
+                        )}
 
-                  {openRid === row.rid && (
-                    <Drawer
-                      open
-                      onClose={() => setOpenRid(null)}
-                      title={`Timeline – ${row.rid.slice(0, 10)}…`}
-                    >
-                      <LoanTimeline requestId={row.rid} />
-                    </Drawer>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => setOpenRid(row.rid)}
+                        >
+                          Timeline
+                        </Button>
 
-      <p className="text-xs text-gray-500 mt-2">
-        INR values are approximate for demo. Disburse/Repay require prior cUSD approval to the contract.
-      </p>
-    </div>
+                        <Button
+                          size="small"
+                          component="a"
+                          href={`/loans?r=${row.rid}`}
+                          variant="outlined"
+                        >
+                          Open
+                        </Button>
+                      </Stack>
+
+                      {lastTx && (
+                        <Box mt={1}>
+                          <ExplorerLink tx={lastTx} />
+                        </Box>
+                      )}
+
+                      {openRid === row.rid && (
+                        <Drawer
+                          open
+                          onClose={() => setOpenRid(null)}
+                          title={`Timeline – ${row.rid.slice(0, 10)}…`}
+                        >
+                          <LoanTimeline requestId={row.rid} />
+                        </Drawer>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <Divider sx={{ my: 1.5 }} />
+
+        <Typography variant="caption" color="text.secondary">
+          INR values are approximate for demo. Disburse/Repay require prior cUSD approval to the contract.
+        </Typography>
+      </CardContent>
+    </Card>
   );
 }

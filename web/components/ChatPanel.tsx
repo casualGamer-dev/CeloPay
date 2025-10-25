@@ -8,6 +8,22 @@ import {
 } from '../lib/pqc/keyStore';
 import { deriveEncryptKeyWithPeer, deriveDecryptKeyFromKem } from '../lib/pqc/session';
 import { aesGcmEncrypt, aesGcmDecrypt, b64 } from '../lib/pqc/crypto';
+import toast from 'react-hot-toast';
+
+// MUI
+import {
+  Box,
+  Card,
+  CardContent,
+  Stack,
+  Typography,
+  TextField,
+  Button,
+  Chip,
+  Divider,
+  Tooltip,
+  Paper,
+} from '@mui/material';
 
 type Msg = {
   id: string;
@@ -55,7 +71,7 @@ export default function ChatPanel() {
     });
   }, [isConnected, myAddr]);
 
-  // If disconnected, clear transient UI state (but keep local keypair as per Option A)
+  // If disconnected, clear transient UI state (but keep local keypair)
   useEffect(() => {
     if (!isConnected) {
       setMessages([]);
@@ -82,9 +98,7 @@ export default function ChatPanel() {
           setPeerPkB64(pk);
           return; // stop polling after found
         }
-      } catch (e) {
-        // ignore and retry
-      }
+      } catch {}
       timer = setTimeout(tick, 1500);
     }
 
@@ -177,42 +191,35 @@ export default function ChatPanel() {
       await loadMessages(); // refresh after send
     } catch (e) {
       console.error('Failed sending message:', e);
+      toast.error('Failed to send');
     }
   }
 
-  // ESTABLISH CHANNEL (the new Connect button's main work)
+  // ESTABLISH CHANNEL
   async function establishChannel() {
     if (!isConnected) return;
     if (!isAddr(myAddr) || !isAddr(peer)) {
-      alert('Please connect wallet and enter a valid peer wallet address (0x...)');
+      toast.error('Connect wallet and enter a valid peer address (0x…)');
       return;
     }
 
     try {
-      // Ensure local keypair and publish our public key (again, harmless)
       await ensureLocalKeypair();
       await publishPublicKey(myAddr);
 
-      // Try to fetch peer key
       const pk = await fetchPeerPublicKeyB64(peer);
       if (!pk) {
-        // Peer hasn't published yet; start polling (auto-poll effect will pick it up)
         setPeerPkB64(null);
-        // Inform user
-        // (You may replace alert with a nicer toast in your UI)
-        alert('Peer key not found yet. We published your key and are waiting for the peer to join. They should open /chat to publish their key.');
+        toast('Peer key not found yet. We published your key and are waiting for the peer. Ask them to open /chat.');
         return;
       }
 
-      // Peer key exists: create KEM bootstrap and send a single empty-message bootstrap
       const derived = await deriveEncryptKeyWithPeer(pk);
       const aesKey = derived.aesKey;
       const kemCtB64 = derived.kemCiphertextB64;
       const saltB64 = derived.saltB64;
 
-      // Encrypt an empty string as the handshake bootstrap message
       const { iv, ct } = await aesGcmEncrypt(aesKey, '');
-
       const payload = {
         from: myAddr,
         to: peer,
@@ -228,18 +235,16 @@ export default function ChatPanel() {
         body: JSON.stringify(payload),
       });
 
-      // load messages and set sessionKey locally
       setSessionKey(aesKey);
       lastKemRef.current = { kemCtB64, saltB64 };
       await loadMessages();
-      alert('Channel established — handshake message sent.');
+      toast.success('Channel established — handshake sent.');
     } catch (e) {
       console.error('Failed to establish channel:', e);
-      alert('Failed to establish channel — check console for details.');
+      toast.error('Failed to establish channel (see console).');
     }
   }
 
-  // handle Enter key for input
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -250,77 +255,117 @@ export default function ChatPanel() {
   const canChat = isConnected && isAddr(myAddr) && isAddr(peer) && !!peerPkB64;
 
   return (
-    <div className="card p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-medium">PQC Chat</h2>
-          <div className="text-sm text-gray-500">Connected wallet (read-only):</div>
-          <div className="font-mono text-xs">{isConnected ? myAddr : 'Not connected'}</div>
-        </div>
+    <Card>
+      <CardContent>
+        <Stack spacing={2}>
+          {/* Header */}
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                PQC Chat
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Connected wallet (read-only):
+              </Typography>
+              <Typography variant="caption" sx={{ display: 'block', fontFamily: 'ui-monospace, SFMono-Regular, monospace' }}>
+                {isConnected ? myAddr : 'Not connected'}
+              </Typography>
+            </Box>
 
-        <div className="text-sm text-gray-600">
-          {isConnected ? 'Connected' : 'Wallet disconnected — connect to access chat'}
-        </div>
-      </div>
+            <Chip
+              size="small"
+              variant="outlined"
+              color={isConnected ? 'success' : 'default'}
+              label={isConnected ? 'Connected' : 'Disconnected'}
+            />
+          </Stack>
 
-      <div className="flex items-center gap-2">
-        <input
-          className="input"
-          placeholder="Peer wallet (0x...)"
-          value={peer}
-          onChange={e => setPeer(e.target.value)}
-          disabled={!isConnected}
-        />
+          {/* Controls */}
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
+            <TextField
+              label="Peer wallet (0x…)"
+              placeholder="0xabc…"
+              value={peer}
+              onChange={(e) => setPeer(e.target.value)}
+              disabled={!isConnected}
+              fullWidth
+            />
 
-        {/* NEW: Connect button to establish channel */}
-        <button
-          className="btn"
-          onClick={establishChannel}
-          disabled={!isConnected || !isAddr(peer)}
-          title="Publish your key and send handshake to peer (if peer key exists)"
-        >
-          Connect
-        </button>
+            <Tooltip title="Publish your key and send handshake if peer key exists">
+              <span>
+                <Button
+                  variant="outlined"
+                  onClick={establishChannel}
+                  disabled={!isConnected || !isAddr(peer)}
+                >
+                  Connect
+                </Button>
+              </span>
+            </Tooltip>
 
-        <button className="btn" onClick={loadMessages} disabled={!isConnected || !isAddr(peer)}>
-          Refresh
-        </button>
+            <Button variant="outlined" onClick={loadMessages} disabled={!isConnected || !isAddr(peer)}>
+              Refresh
+            </Button>
 
-        {peerPkB64 ? (
-          <span className="text-xs px-2 py-1 rounded-lg bg-[var(--muted)] border">Peer key: loaded</span>
-        ) : (
-          <span className="text-xs px-2 py-1 rounded-lg border">{isConnected ? 'Waiting for peer key…' : '—'}</span>
-        )}
-      </div>
+            <Chip
+              size="small"
+              variant="outlined"
+              color={peerPkB64 ? 'success' : 'default'}
+              label={peerPkB64 ? 'Peer key: loaded' : isConnected ? 'Waiting for peer key…' : '—'}
+            />
+          </Stack>
 
-      <div className="h-72 overflow-y-auto border rounded-xl p-3 bg-[var(--muted)]">
-        {isConnected ? (
-          messages.map(m => (
-            <MessageBubble key={m.id} me={m.from === myAddr} msg={m} sessionKey={sessionKey} />
-          ))
-        ) : (
-          <div className="text-sm text-gray-500">Connect your wallet to view chat.</div>
-        )}
-      </div>
+          {/* Messages */}
+          <Paper
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              p: 1.5,
+              height: 320,
+              overflowY: 'auto',
+              backgroundColor: 'background.default',
+            }}
+          >
+            {isConnected ? (
+              messages.map((m) => (
+                <MessageBubble key={m.id} me={m.from === myAddr} msg={m} sessionKey={sessionKey} />
+              ))
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                Connect your wallet to view chat.
+              </Typography>
+            )}
+          </Paper>
 
-      <div className="flex gap-2">
-        <input
-          className="input"
-          placeholder={canChat ? 'Type a message…' : 'Connect wallet and load peer key to chat'}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          disabled={!canChat}
-        />
-        <button className="btn btn-primary" onClick={send} disabled={!canChat || !input.trim()}>
-          Send
-        </button>
-      </div>
-    </div>
+          {/* Composer */}
+          <Stack direction="row" spacing={1.25}>
+            <TextField
+              placeholder={canChat ? 'Type a message…' : 'Connect wallet and load peer key to chat'}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              disabled={!canChat}
+              fullWidth
+            />
+            <Button variant="contained" onClick={send} disabled={!canChat || !input.trim()}>
+              Send
+            </Button>
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }
 
-function MessageBubble({ me, msg, sessionKey }: { me: boolean; msg: Msg; sessionKey: CryptoKey | null }) {
+function MessageBubble({
+  me,
+  msg,
+  sessionKey,
+}: {
+  me: boolean;
+  msg: Msg;
+  sessionKey: CryptoKey | null;
+}) {
   const [plain, setPlain] = useState<string>('🔒 encrypted');
 
   useEffect(() => {
@@ -341,11 +386,25 @@ function MessageBubble({ me, msg, sessionKey }: { me: boolean; msg: Msg; session
   }, [sessionKey, msg.ivB64, msg.ciphertextB64]);
 
   return (
-    <div className={`max-w-[80%] my-1 ${me ? 'ml-auto' : ''}`}>
-      <div className={`px-3 py-2 rounded-xl ${me ? 'bg-gray-900 text-white' : 'bg-white border'}`}>
-        <div className="text-sm break-words">{plain}</div>
-        <div className="text-[11px] opacity-60 mt-1">{new Date(msg.timestamp).toLocaleString()}</div>
-      </div>
-    </div>
+    <Box sx={{ maxWidth: '80%', my: 0.75, ml: me ? 'auto' : 0 }}>
+      <Box
+        sx={{
+          px: 1.5,
+          py: 1,
+          borderRadius: 2,
+          bgcolor: me ? 'primary.dark' : 'background.paper',
+          border: me ? 'none' : '1px solid',
+          borderColor: me ? 'transparent' : 'divider',
+          color: me ? 'primary.contrastText' : 'text.primary',
+        }}
+      >
+        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+          {plain || <span style={{ opacity: 0.6 }}>·</span>}
+        </Typography>
+        <Typography variant="caption" sx={{ opacity: 0.65, mt: 0.5, display: 'block' }}>
+          {new Date(msg.timestamp).toLocaleString()}
+        </Typography>
+      </Box>
+    </Box>
   );
 }

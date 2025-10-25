@@ -2,14 +2,33 @@
 
 import useSWR, { mutate } from 'swr';
 import { useAccount } from 'wagmi';
+import { useMemo, useState } from 'react';
 import DashboardTable from './DashboardTable';
 import Copy from './Copy';
 import { short } from '../lib/utils';
-import { useMemo, useState } from 'react';
+import SummaryBar from './SummaryBar';
 import Skeleton from './Skeleton';
 
-import SummaryBar from './SummaryBar';
-
+// MUI
+import {
+  Box,
+  Stack,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Switch,
+  FormControlLabel,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Divider,
+} from '@mui/material';
 
 type CircleRow = { id: `0x${string}`; name: string; createdBy: `0x${string}`; members: `0x${string}`[]; };
 type LoanRow = {
@@ -19,12 +38,19 @@ type LoanRow = {
 
 const fetcher = (u: string) => fetch(u).then(r => r.json());
 
-export default function DashboardClient({ data }: { data: { contract: `0x${string}`; circleRows: CircleRow[]; loanRows: LoanRow[] } }) {
+export default function DashboardClient({
+  data,
+}: {
+  data: { contract: `0x${string}`; circleRows: CircleRow[]; loanRows: LoanRow[] };
+}) {
   const { address } = useAccount();
   const [onlyMine, setOnlyMine] = useState(true);
 
   // live data (poll every 10s)
-  const { data: live, isLoading } = useSWR('/api/dashboard', fetcher, { refreshInterval: 10_000, fallbackData: { ok: true, data } });
+  const { data: live, isLoading } = useSWR('/api/dashboard', fetcher, {
+    refreshInterval: 10_000,
+    fallbackData: { ok: true, data },
+  });
 
   const me = (address || '').toLowerCase();
   const rows = live?.data ?? data;
@@ -34,10 +60,10 @@ export default function DashboardClient({ data }: { data: { contract: `0x${strin
     return rows.circleRows.filter(c => c.members.some(m => m.toLowerCase() === me));
   }, [rows.circleRows, onlyMine, me]);
 
-const myCircleIds = useMemo(
-  () => new Set(myCircles.map((c) => c.id.toLowerCase())),
-  [myCircles]
-);
+  const myCircleIds = useMemo(
+    () => new Set(myCircles.map(c => c.id.toLowerCase())),
+    [myCircles]
+  );
 
   const myLoans = useMemo(() => {
     if (!onlyMine || !me) return rows.loanRows;
@@ -49,87 +75,152 @@ const myCircleIds = useMemo(
     );
   }, [rows.loanRows, myCircles, onlyMine, me]);
 
+  const meL = (address || '').toLowerCase();
+  const canApprove = (l: any) =>
+    !l.repaid && !l.approved && meL && myCircleIds.has(l.circleId.toLowerCase());
 
+  const canDisburse = (l: any) => !l.repaid && l.approved && meL;
+  const canRepay    = (l: any) => !l.repaid && meL && l.borrower.toLowerCase() === meL;
 
-const meL = (address || '').toLowerCase();
-const canApprove = (l: any) =>
-  !l.repaid && !l.approved && meL && (
-    // member of that circle OR previously approved (allow re-approval ignore) — keep simple
-    myCircleIds.has(l.circleId.toLowerCase())
-  );
-
-  const canDisburse = (l: any) => !l.repaid && l.approved && meL; // any member/funder can disburse in this MVP
-const canRepay    = (l: any) => !l.repaid && meL && l.borrower.toLowerCase() === meL;
-
-const summary = {
-  totalCircles: myCircles.length,
-  totalLoans: myLoans.length,
-  needMyApproval: myLoans.filter(canApprove).length,
-  needMyDisbursal: myLoans.filter(canDisburse).length,
-  needMyRepay: myLoans.filter(canRepay).length,
-};
+  const summary = {
+    totalCircles: myCircles.length,
+    totalLoans: myLoans.length,
+    needMyApproval: myLoans.filter(canApprove).length,
+    needMyDisbursal: myLoans.filter(canDisburse).length,
+    needMyRepay: myLoans.filter(canRepay).length,
+  };
 
   return (
-    
-    <div className="space-y-8">
-    <div className="flex items-center gap-3">
-    {address ? (
-      <span className="text-xs text-gray-600">You are: {address}</span>
-    ) : (
-      <span className="text-xs text-gray-500">Connect wallet</span>
-    )}
-    <label className="flex items-center gap-2 text-sm">
-      <input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />
-      Only mine
-    </label>
-    <button className="btn btn-sm" onClick={() => mutate()} disabled={isLoading}>
-      {isLoading ? 'Refreshing…' : 'Refresh'}
-    </button>
-  </div>
+    <Stack spacing={3}>
+      {/* Top controls */}
+      <Card>
+        <CardContent>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            justifyContent="space-between"
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Chip
+                size="small"
+                color={address ? 'success' : 'default'}
+                variant="outlined"
+                label={
+                  address ? `You: ${address}` : 'Connect wallet'
+                }
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={onlyMine}
+                    onChange={e => setOnlyMine(e.target.checked)}
+                  />
+                }
+                label={<Typography variant="body2">Only mine</Typography>}
+              />
+            </Stack>
 
+            <Button
+              variant="contained"
+              onClick={() => mutate('/api/dashboard')}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Refreshing…' : 'Refresh'}
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
 
-   <SummaryBar {...summary} />
+      {/* Summary */}
+      <SummaryBar {...summary} />
 
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Circles</h2>
-          {isLoading && <span className="text-xs text-gray-500">Refreshing…</span>}
-        </div>
-       {isLoading ? (
-  <Skeleton rows={4} />
-) : myCircles.length === 0 ? (
-  <div className="text-sm text-gray-600">No circles found.</div>
-) : (
-          <div className="overflow-x-auto">
-            <table className="table">
-              <thead><tr><th>circleId</th><th>Name</th><th>Creator</th><th>Members</th></tr></thead>
-              <tbody>
-                {myCircles.map((row) => (
-                  <tr key={row.id}>
-                    <td className="text-xs break-all">{row.id} <Copy value={row.id} /></td>
-                    <td>{row.name}</td>
-                    <td className="text-xs">{short(row.createdBy)}</td>
-                    <td className="text-xs">{row.members.map(short).join(', ')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Circles */}
+      <Card>
+        <CardContent>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            mb={2}
+          >
+            <Typography variant="h6">Circles</Typography>
+            {isLoading && (
+              <Typography variant="caption" color="text.secondary">
+                Refreshing…
+              </Typography>
+            )}
+          </Stack>
 
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Loans</h2>
-          {isLoading && <span className="text-xs text-gray-500">Refreshing…</span>}
-        </div>
-        <DashboardTable
-  contract={rows.contract}
-  rows={myLoans}
-  me={address as `0x${string}` | undefined}
-  myCircleIds={myCircleIds}  // ✅ THIS MUST BE PRESENT
-/>
-      </div>
-    </div>
+          {isLoading ? (
+            <Skeleton rows={4} />
+          ) : myCircles.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No circles found.
+            </Typography>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>circleId</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Creator</TableCell>
+                    <TableCell>Members</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {myCircles.map((row) => (
+                    <TableRow key={row.id} hover>
+                      <TableCell sx={{ wordBreak: 'break-all' }}>
+                        <Typography variant="caption" component="span">
+                          {row.id}
+                        </Typography>{' '}
+                        <Copy value={row.id} />
+                      </TableCell>
+                      <TableCell>{row.name}</TableCell>
+                      <TableCell>
+                        <Typography variant="caption">{short(row.createdBy)}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="caption">
+                          {row.members.map(short).join(', ')}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Loans */}
+      <Card>
+        <CardContent>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            mb={2}
+          >
+            <Typography variant="h6">Loans</Typography>
+            {isLoading && (
+              <Typography variant="caption" color="text.secondary">
+                Refreshing…
+              </Typography>
+            )}
+          </Stack>
+
+          <DashboardTable
+            contract={rows.contract}
+            rows={myLoans}
+            me={address as `0x${string}` | undefined}
+            myCircleIds={myCircleIds}
+          />
+        </CardContent>
+      </Card>
+    </Stack>
   );
 }

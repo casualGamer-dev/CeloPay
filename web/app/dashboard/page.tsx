@@ -1,5 +1,11 @@
 // app/dashboard/page.tsx
 import { fetchRecentEvents, publicClient } from '../../lib/events';
+import {
+  Container,
+  Card,
+  CardContent,
+  Typography,
+} from '@mui/material';
 
 const addr = process.env.NEXT_PUBLIC_CELO_ADDRESS as `0x${string}` | undefined;
 
@@ -8,9 +14,15 @@ export const dynamic = 'force-dynamic';
 export default async function DashboardPage() {
   if (!addr) {
     return (
-      <div className="card p-6">
-        Set <code>NEXT_PUBLIC_CELO_ADDRESS</code> to enable the on-chain dashboard.
-      </div>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Card>
+          <CardContent>
+            <Typography variant="body2" color="text.secondary">
+              Set <code>NEXT_PUBLIC_CELO_ADDRESS</code> to enable the on-chain dashboard.
+            </Typography>
+          </CardContent>
+        </Card>
+      </Container>
     );
   }
 

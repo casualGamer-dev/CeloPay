@@ -1,15 +1,34 @@
 'use client';
-import { useState } from 'react';
 
-export default function Copy({ value, className='' }: { value: string; className?: string }) {
+import { useState } from 'react';
+import { IconButton, Tooltip } from '@mui/material';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+
+export default function Copy({ value }: { value: string }) {
   const [ok, setOk] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(value);
+    setOk(true);
+    setTimeout(() => setOk(false), 1200);
+  };
+
   return (
-    <button
-      className={`text-xs px-2 py-1 border rounded ${className}`}
-      onClick={async () => { await navigator.clipboard.writeText(value); setOk(true); setTimeout(()=>setOk(false), 1200); }}
-      title="Copy"
-    >
-      {ok ? 'Copied' : 'Copy'}
-    </button>
+    <Tooltip title={ok ? 'Copied' : 'Copy'} arrow>
+      <IconButton
+        size="small"
+        onClick={handleCopy}
+        sx={{
+          transition: '0.2s',
+        }}
+      >
+        {ok ? (
+          <CheckCircleRoundedIcon fontSize="inherit" />
+        ) : (
+          <ContentCopyRoundedIcon fontSize="inherit" />
+        )}
+      </IconButton>
+    </Tooltip>
   );
 }

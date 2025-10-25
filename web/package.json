@@ -10,6 +10,11 @@
     "postinstall": "node scripts/postinstall.cjs"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^6.5.0",
+    "@mui/lab": "^7.0.1-beta.18",
+    "@mui/material": "^6.5.0",
     "@react-native-async-storage/async-storage": "^1.24.0",
     "@tanstack/react-query": "^5.56.2",
     "clsx": "^2.1.1",
@@ -21,7 +26,7 @@
     "react-hot-toast": "^2.6.0",
     "swr": "^2.3.6",
     "viem": "^2.9.0",
-    "wagmi": "^2.12.0"
+    "wagmi": "^2.12.7"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",

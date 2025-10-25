@@ -74,7 +74,7 @@
       ]
     },
     "C:\\Users\\nilad\\OneDrive\\Documents\\GitHub\\CeloPay\\contracts\\contracts\\NyaayaPay.sol": {
-      "lastModificationDate": 1761428531940,
+      "lastModificationDate": 1761431698316,
       "contentHash": "8241a3058aa7de6a6a4522d756bfaa2b",
       "sourceName": "contracts/NyaayaPay.sol",
       "solcConfig": {
@@ -109,6 +109,78 @@
       ],
       "artifacts": [
         "CeloPay"
+      ]
+    },
+    "C:\\Users\\nilad\\OneDrive\\Documents\\GitHub\\CeloPay\\contracts\\contracts\\KeyRegistry.sol": {
+      "lastModificationDate": 1761431698327,
+      "contentHash": "be0c8b3e870f09770ed9ad833056f4c3",
+      "sourceName": "contracts/KeyRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "KeyRegistry"
+      ]
+    },
+    "C:\\Users\\nilad\\OneDrive\\Documents\\GitHub\\CeloPay\\contracts\\contracts\\ProfileRegistry.sol": {
+      "lastModificationDate": 1761431698321,
+      "contentHash": "6a7ca844690af0b5f77b25355e6d3d14",
+      "sourceName": "contracts/ProfileRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ProfileRegistry"
       ]
     }
   }

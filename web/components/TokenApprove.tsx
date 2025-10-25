@@ -1,10 +1,21 @@
 'use client';
+
 import erc20 from '../lib/erc20.abi.json';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { celoAlfajores } from 'viem/chains';
 import { toWeiFromCUSD, fromWeiToCUSD } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
+
+// MUI
+import {
+  Card,
+  CardContent,
+  Stack,
+  Typography,
+  TextField,
+} from '@mui/material';
+import { LoadingButton } from '@mui/lab';
 
 const CUSD = (process.env.NEXT_PUBLIC_CUSD_ADDRESS ||
   '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1') as `0x${string}`;
@@ -32,23 +43,48 @@ export default function TokenApprove({ spender }: { spender: `0x${string}` }) {
           chain: celoAlfajores,
           account: address as `0x${string}`,
         }),
-        { loading: 'Approving cUSD…', success: 'Approval submitted', error: 'Approval failed' }
+        {
+          loading: 'Approving cUSD…',
+          success: 'Approval submitted',
+          error: 'Approval failed',
+        }
       );
     } catch {}
   };
 
+  const allowanceText =
+    allowance !== undefined
+      ? `${fromWeiToCUSD(allowance as bigint)} cUSD`
+      : '—';
+
   return (
-    <div className="card p-4 space-y-2">
-      <div className="font-semibold">cUSD Allowance</div>
-      <div className="text-sm text-gray-600">
-        Current allowance: {allowance ? `${fromWeiToCUSD(allowance as bigint)} cUSD` : '—'}
-      </div>
-      <div className="flex gap-2">
-        <input className="input" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="Amount (cUSD)" />
-        <button className="btn btn-primary" onClick={doApprove} disabled={isPending}>
-          {isPending ? 'Approving…' : 'Approve'}
-        </button>
-      </div>
-    </div>
+    <Card>
+      <CardContent>
+        <Stack spacing={2}>
+          <Typography variant="h6">cUSD Allowance</Typography>
+
+          <Typography variant="body2" color="text.secondary">
+            Current allowance: {allowanceText}
+          </Typography>
+
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
+            <TextField
+              label="Amount (cUSD)"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="e.g. 100"
+              fullWidth
+            />
+            <LoadingButton
+              variant="contained"
+              onClick={doApprove}
+              loading={isPending}
+            >
+              Approve
+            </LoadingButton>
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }

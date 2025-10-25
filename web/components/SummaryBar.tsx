@@ -1,32 +1,52 @@
 'use client';
 
+import { Grid, Card, CardContent, Typography } from '@mui/material';
+
+type Props = {
+  totalCircles: number;
+  totalLoans: number;
+  needMyApproval: number;
+  needMyDisbursal: number;
+  needMyRepay: number;
+};
+
 export default function SummaryBar({
   totalCircles,
   totalLoans,
   needMyApproval,
   needMyDisbursal,
   needMyRepay,
-}: {
-  totalCircles: number;
-  totalLoans: number;
-  needMyApproval: number;
-  needMyDisbursal: number;
-  needMyRepay: number;
-}) {
-  const Card = ({ label, value }: { label: string; value: number }) => (
-    <div className="flex-1 rounded-xl border p-3 bg-white shadow-sm">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-lg font-semibold">{value}</div>
-    </div>
+}: Props) {
+  const StatCard = ({ label, value }: { label: string; value: number }) => (
+    <Card>
+      <CardContent sx={{ py: 2 }}>
+        <Typography variant="caption" color="text.secondary">
+          {label}
+        </Typography>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          {value}
+        </Typography>
+      </CardContent>
+    </Card>
   );
 
   return (
-    <div className="grid gap-3 md:grid-cols-5">
-      <Card label="My circles" value={totalCircles} />
-      <Card label="My loans" value={totalLoans} />
-      <Card label="Needs my approval" value={needMyApproval} />
-      <Card label="Needs my disburse" value={needMyDisbursal} />
-      <Card label="Needs my repay" value={needMyRepay} />
-    </div>
+    <Grid container spacing={2}>
+      <Grid item xs={6} md={2.4}>
+        <StatCard label="My circles" value={totalCircles} />
+      </Grid>
+      <Grid item xs={6} md={2.4}>
+        <StatCard label="My loans" value={totalLoans} />
+      </Grid>
+      <Grid item xs={6} md={2.4}>
+        <StatCard label="Needs my approval" value={needMyApproval} />
+      </Grid>
+      <Grid item xs={6} md={2.4}>
+        <StatCard label="Needs my disburse" value={needMyDisbursal} />
+      </Grid>
+      <Grid item xs={12} md={2.4}>
+        <StatCard label="Needs my repay" value={needMyRepay} />
+      </Grid>
+    </Grid>
   );
 }

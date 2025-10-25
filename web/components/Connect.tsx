@@ -1,6 +1,9 @@
 'use client';
+
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
+import { Button, Chip, Stack, Tooltip } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
 
 export default function Connect() {
   const { isConnected, address } = useAccount();
@@ -8,19 +11,30 @@ export default function Connect() {
   const { disconnect } = useDisconnect();
 
   if (isConnected) {
+    const short =
+      address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connected';
+
     return (
-      <div className="flex items-center gap-2">
-        <span className="px-2 py-1 rounded-lg bg-[#f6f6f6] border">
-          {address?.slice(0, 6)}…{address?.slice(-4)}
-        </span>
-        <button className="btn" onClick={() => disconnect()}>Disconnect</button>
-      </div>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Chip size="small" variant="outlined" color="success" label={short} />
+        <Button variant="outlined" onClick={() => disconnect()}>
+          Disconnect
+        </Button>
+      </Stack>
     );
   }
 
   return (
-    <button className="btn" onClick={() => connect({ connector: injected() })}>
-      {isPending ? 'Connecting…' : 'Connect Wallet'}
-    </button>
+    <Tooltip title="Connect with an injected wallet (e.g., MetaMask)">
+      <span>
+        <LoadingButton
+          variant="contained"
+          onClick={() => connect({ connector: injected() })}
+          loading={isPending}
+        >
+          Connect Wallet
+        </LoadingButton>
+      </span>
+    </Tooltip>
   );
 }

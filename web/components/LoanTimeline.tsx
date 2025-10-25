@@ -3,6 +3,18 @@
 import { useEffect, useState } from 'react';
 import ExplorerLink from './ExplorerLink';
 
+// MUI
+import {
+  Box,
+  Stack,
+  Typography,
+  Card,
+  CardContent,
+  Divider,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
+
 type Item = {
   name: string;
   args: Record<string, any>;
@@ -11,15 +23,7 @@ type Item = {
   timestamp?: number;
 };
 
-export default function LoanTimeline({
-  requestId,
-  open,
-  onClose,
-}: {
-  requestId: `0x${string}`;
-  open: boolean;
-  onClose: () => void;
-}) {
+export default function LoanTimeline({ requestId }: { requestId: `0x${string}` }) {
   const [items, setItems] = useState<Item[] | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,46 +35,103 @@ export default function LoanTimeline({
         const r = await fetch(`/api/loan/${requestId}`);
         const j = await r.json();
         if (!active) return;
-        setItems(j.ok ? j.data : []);
+        setItems(j.ok ? (j.data as Item[]) : []);
+      } catch {
+        if (active) setItems([]);
       } finally {
         if (active) setLoading(false);
       }
     }
-    if (open) load();
-    return () => { active = false; };
-  }, [open, requestId]);
+    load();
+    return () => {
+      active = false;
+    };
+  }, [requestId]);
 
   return (
-    <div className={`fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`}>
-      {/* backdrop */}
-      <div className={`absolute inset-0 bg-black/30 transition-opacity ${open ? 'opacity-100' : 'opacity-0'}`} onClick={onClose} />
-      {/* panel */}
-      <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl transition-transform ${open ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="p-4 border-b flex items-center justify-between">
-          <h3 className="font-semibold text-lg">Loan Timeline</h3>
-          <button className="btn btn-sm" onClick={onClose}>Close</button>
-        </div>
-        <div className="p-4 space-y-3 overflow-y-auto h-[calc(100%-56px)]">
-          <div className="text-xs text-gray-500 break-all">requestId: {requestId}</div>
-          {loading && <div className="text-sm">Loading events…</div>}
-          {!loading && (!items || items.length === 0) && <div className="text-sm text-gray-600">No events yet.</div>}
-          {!loading && items && items.map((it, i) => {
-            const ts = it.timestamp ? new Date(it.timestamp * 1000).toLocaleString() : '—';
-            return (
-              <div key={i} className="border rounded p-3">
-                <div className="text-sm font-medium">{it.name}</div>
-                <div className="text-xs text-gray-600">{ts}</div>
-                <div className="mt-2 text-xs space-y-1">
-                  {Object.entries(it.args).map(([k,v]) => (
-                    <div key={k}><span className="text-gray-500">{k}:</span> <span className="break-all">{String(v)}</span></div>
-                  ))}
-                </div>
-                <div className="mt-2"><ExplorerLink tx={it.txHash} /></div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
+    <Stack spacing={2}>
+      {/* Header */}
+      <Box>
+        <Typography variant="caption" color="text.secondary">
+          requestId
+        </Typography>
+        <Box
+          sx={{
+            mt: 0.5,
+            p: 1,
+            borderRadius: 1.5,
+            border: '1px solid',
+            borderColor: 'divider',
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            wordBreak: 'break-all',
+          }}
+        >
+          {requestId}
+        </Box>
+      </Box>
+
+      {/* Loading state */}
+      {loading && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CircularProgress size={18} />
+          <Typography variant="body2">Loading events…</Typography>
+        </Box>
+      )}
+
+      {/* Empty state */}
+      {!loading && (!items || items.length === 0) && (
+        <Alert severity="info" variant="outlined">
+          No events yet.
+        </Alert>
+      )}
+
+      {/* Events */}
+      {!loading &&
+        items &&
+        items.map((it, i) => {
+          const ts = it.timestamp ? new Date(it.timestamp * 1000).toLocaleString() : '—';
+          return (
+            <Card key={`${it.txHash}-${i}`}>
+              <CardContent sx={{ p: 2 }}>
+                <Stack spacing={1}>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {it.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {ts}
+                    </Typography>
+                  </Box>
+
+                  <Divider />
+
+                  <Stack spacing={0.5} sx={{ mt: 1 }}>
+                    {Object.entries(it.args).map(([k, v]) => (
+                      <Box key={k} sx={{ display: 'flex', gap: 0.75, alignItems: 'baseline' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 96 }}>
+                          {k}:
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            wordBreak: 'break-all',
+                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                          }}
+                        >
+                          {String(v)}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+
+                  <Box sx={{ mt: 1 }}>
+                    <ExplorerLink tx={it.txHash} />
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          );
+        })}
+    </Stack>
   );
 }
