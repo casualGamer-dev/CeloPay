@@ -11,7 +11,7 @@ export default function LoansPage() {
   const { writeContract, isPending } = useWriteContract();
 
   const [circle, setCircle] = useState('circle-1'); // JSON demo
-  const [amount, setAmount] = useState('500'); // JSON demo cUSD units
+  const [amount, setAmount] = useState('500');      // JSON demo cUSD units (string for the mock API)
   const [installments, setInstallments] = useState('3');
   const [result, setResult] = useState<string | undefined>();
 
@@ -35,8 +35,8 @@ export default function LoansPage() {
   function requestOnchain() {
     if (!addr || !account) return alert('Set NEXT_PUBLIC_NYAAYA_ADDRESS and connect wallet');
     const cid = prompt('CircleId (bytes32 hex)?') as `0x${string}`;
-    const amtWei = BigInt(prompt('Amount (wei of cUSD)?') || '0'); // uint256
-    const ins = Number(prompt('Installments 1-12?') || '3'); // uint8
+    const amtWei = BigInt(prompt('Amount (wei of cUSD)?') || '0'); // uint256 → bigint
+    const ins = Number(prompt('Installments 1-12?') || '3');       // uint8 → number
     writeContract({
       abi,
       address: addr,
@@ -50,20 +50,41 @@ export default function LoansPage() {
   function approve() {
     if (!addr || !account) return alert('Set NEXT_PUBLIC_NYAAYA_ADDRESS and connect wallet');
     const rid = prompt('RequestId (bytes32 hex)?') as `0x${string}`;
-    writeContract({ abi, address: addr, functionName: 'approveLoan', args: [rid], account, chain: celoAlfajores });
+    writeContract({
+      abi,
+      address: addr,
+      functionName: 'approveLoan',
+      args: [rid],
+      account,
+      chain: celoAlfajores,
+    });
   }
 
   function disburse() {
     if (!addr || !account) return alert('Set NEXT_PUBLIC_NYAAYA_ADDRESS and connect wallet');
     const rid = prompt('RequestId (bytes32 hex)?') as `0x${string}`;
-    writeContract({ abi, address: addr, functionName: 'disburse', args: [rid], account, chain: celoAlfajores });
+    writeContract({
+      abi,
+      address: addr,
+      functionName: 'disburse',
+      args: [rid],
+      account,
+      chain: celoAlfajores,
+    });
   }
 
   function repay() {
     if (!addr || !account) return alert('Set NEXT_PUBLIC_NYAAYA_ADDRESS and connect wallet');
     const rid = prompt('RequestId (bytes32 hex)?') as `0x${string}`;
-    const amt = BigInt(prompt('Amount (wei)?') || '0');
-    writeContract({ abi, address: addr, functionName: 'repay', args: [rid, amt], account, chain: celoAlfajores });
+    const amt = BigInt(prompt('Amount (wei)?') || '0'); // uint256 → bigint
+    writeContract({
+      abi,
+      address: addr,
+      functionName: 'repay',
+      args: [rid, amt],
+      account,
+      chain: celoAlfajores,
+    });
   }
 
   return (
@@ -88,7 +109,7 @@ export default function LoansPage() {
           <button disabled={!isConnected || isPending} className="btn" onClick={approve}>
             Approve
           </button>
-          <button disabled {!isConnected || isPending} className="btn" onClick={disburse}>
+          <button disabled={!isConnected || isPending} className="btn" onClick={disburse}>
             Disburse
           </button>
           <button disabled={!isConnected || isPending} className="btn" onClick={repay}>

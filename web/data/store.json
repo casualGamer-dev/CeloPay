@@ -11,6 +11,17 @@
       "status": "PENDING",
       "createdAt": 1761376688202,
       "dueDates": []
+    },
+    {
+      "id": "1761381116050-ooyagxnj72",
+      "borrower": "0x0",
+      "circleId": "circle-1",
+      "amountCUSD": "500",
+      "installments": 3,
+      "approvals": [],
+      "status": "PENDING",
+      "createdAt": 1761381116050,
+      "dueDates": []
     }
   ]
 }

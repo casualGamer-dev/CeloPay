@@ -1,18 +1,17 @@
 'use client';
 import abi from '../../lib/nyaaya.abi.json';
-import { useAccount, useChainId, useWriteContract } from 'wagmi';
+import { useAccount, useWriteContract } from 'wagmi';
+import { celoAlfajores } from 'viem/chains';
 import { useState } from 'react';
 
 const addr = process.env.NEXT_PUBLIC_NYAAYA_ADDRESS as `0x${string}` | undefined;
 
 export default function CirclesPage() {
   const { address, isConnected } = useAccount();
-  const chainId = useChainId();
   const { writeContract, isPending } = useWriteContract();
   const [name, setName] = useState('My College Circle');
   const [description, setDescription] = useState('Friends trust circle');
   const [joinId, setJoinId] = useState('');
-
   const account = address as `0x${string}` | undefined;
 
   return (
@@ -22,7 +21,7 @@ export default function CirclesPage() {
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
         <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" />
         <button
-          disabled={!addr || !isConnected || isPending}
+          disabled={!addr || !isConnected || !account || isPending}
           className="btn btn-primary"
           onClick={() => {
             if (!addr || !account) return alert('Set NEXT_PUBLIC_NYAAYA_ADDRESS and connect wallet');
@@ -30,9 +29,9 @@ export default function CirclesPage() {
               abi,
               address: addr,
               functionName: 'createCircle',
-              args: [name, description],
+              args: [name, description], // (string, string)
               account,
-              chainId,
+              chain: celoAlfajores,
             });
           }}
         >
@@ -50,7 +49,7 @@ export default function CirclesPage() {
           placeholder="Circle bytes32 id (0x…)"
         />
         <button
-          disabled={!addr || !isConnected || isPending}
+          disabled={!addr || !isConnected || !account || isPending}
           className="btn"
           onClick={() => {
             if (!addr || !account) return alert('Set NEXT_PUBLIC_NYAAYA_ADDRESS and connect wallet');
@@ -60,7 +59,7 @@ export default function CirclesPage() {
               functionName: 'joinCircle',
               args: [joinId as `0x${string}`], // bytes32
               account,
-              chainId,
+              chain: celoAlfajores,
             });
           }}
         >

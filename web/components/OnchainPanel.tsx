@@ -1,20 +1,23 @@
 'use client';
 import abi from '../lib/nyaaya.abi.json';
-import { useAccount, useChainId, useWriteContract } from 'wagmi';
+import { useAccount, useWriteContract } from 'wagmi';
+import { celoAlfajores } from 'viem/chains';
 import { useState } from 'react';
 
 const addr = process.env.NEXT_PUBLIC_NYAAYA_ADDRESS as `0x${string}` | undefined;
 
 export default function OnchainPanel() {
   const { address, isConnected } = useAccount();
-  const chainId = useChainId();
   const { writeContract, isPending } = useWriteContract();
   const [message, setMessage] = useState<string | undefined>();
+  const account = address as `0x${string}` | undefined;
 
-  if (!addr) return <div className="text-gray-500">On-chain is disabled — set <code>NEXT_PUBLIC_NYAAYA_ADDRESS</code> in <code>.env</code>.</div>;
-  if (!isConnected) return <div className="text-gray-500">Connect wallet to use on-chain actions.</div>;
-
-  const account = address as `0x${string}`;
+  if (!addr) return (
+    <div className="text-gray-500">
+      On-chain is disabled — set <code>NEXT_PUBLIC_NYAAYA_ADDRESS</code> in <code>.env</code>.
+    </div>
+  );
+  if (!isConnected || !account) return <div className="text-gray-500">Connect wallet to use on-chain actions.</div>;
 
   return (
     <div className="card p-4 space-y-2">
@@ -30,14 +33,14 @@ export default function OnchainPanel() {
                 abi,
                 address: addr,
                 functionName: 'createCircle',
-                args: [name, desc],
+                args: [name, desc],     // (string, string)
                 account,
-                chainId,
+                chain: celoAlfajores,   // ✅ wagmi v2 expects chain, not chainId
               },
               {
                 onSuccess: () => setMessage('Submitted createCircle'),
                 onError: (e: any) => setMessage(e.message),
-              },
+              }
             );
           }}
         >
@@ -54,14 +57,14 @@ export default function OnchainPanel() {
                 abi,
                 address: addr,
                 functionName: 'joinCircle',
-                args: [id], // bytes32
+                args: [id],             // bytes32 → `0x${string}`
                 account,
-                chainId,
+                chain: celoAlfajores,
               },
               {
                 onSuccess: () => setMessage('Submitted joinCircle'),
                 onError: (e: any) => setMessage(e.message),
-              },
+              }
             );
           }}
         >
