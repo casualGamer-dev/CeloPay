@@ -55,18 +55,21 @@ export default function LoanManager({ contract }: { contract: `0x${string}` }) {
     return true;
   }
 
-  const approveLoan = async () => {
-    if (!contract) return toast.error('Contract not set');
-    if (!isBytes32(requestId)) return toast.error('Invalid requestId (bytes32)');
-    await toast.promise(
-      writeContractAsync({
-        abi, address: contract, functionName: 'approveLoan',
-        args: [requestId as `0x${string}`],
-        account: address as `0x${string}`, chain: celoAlfajores,
-      }),
-      { loading: 'Approving…', success: 'Approval submitted', error: 'Approval failed' }
-    );
-  };
+const approveLoan = async () => {
+  if (!contract) return toast.error('Contract not set');
+  if (!isBytes32(requestId)) return toast.error('Invalid requestId (bytes32)');
+  await toast.promise(
+    writeContractAsync({
+      abi,
+      address: contract,
+      functionName: 'approveLoan',
+      args: [requestId as `0x${string}`],
+      account: address as `0x${string}`,
+      chain: celoAlfajores,
+    }),
+    { loading: 'Approving…', success: 'Approval submitted', error: 'Approval failed' }
+  );
+};
 
   const disburse = async () => {
     if (!contract) return toast.error('Contract not set');
@@ -113,11 +116,11 @@ export default function LoanManager({ contract }: { contract: `0x${string}` }) {
         />
       </div>
 
-      <div className="flex gap-2">
-        <button className="btn" disabled={disabled} onClick={approveLoan}>
-          Approve
-        </button>
-      </div>
+   <div className="flex gap-2">
+  <button className="btn" disabled={!isConnected || !address || isPending} onClick={approveLoan}>
+    Approve
+  </button>
+</div>
 
       <div className="space-y-2">
         <label className="text-sm block">Disburse amount (cUSD)</label>

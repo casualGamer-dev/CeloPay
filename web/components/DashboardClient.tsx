@@ -8,6 +8,7 @@ import { short } from '../lib/utils';
 import { useMemo, useState } from 'react';
 import Skeleton from './Skeleton';
 
+import SummaryBar from './SummaryBar';
 
 
 type CircleRow = { id: `0x${string}`; name: string; createdBy: `0x${string}`; members: `0x${string}`[]; };
@@ -33,6 +34,11 @@ export default function DashboardClient({ data }: { data: { contract: `0x${strin
     return rows.circleRows.filter(c => c.members.some(m => m.toLowerCase() === me));
   }, [rows.circleRows, onlyMine, me]);
 
+const myCircleIds = useMemo(
+  () => new Set(myCircles.map((c) => c.id.toLowerCase())),
+  [myCircles]
+);
+
   const myLoans = useMemo(() => {
     if (!onlyMine || !me) return rows.loanRows;
     const circleIds = new Set(myCircles.map(c => c.id.toLowerCase()));
@@ -43,16 +49,29 @@ export default function DashboardClient({ data }: { data: { contract: `0x${strin
     );
   }, [rows.loanRows, myCircles, onlyMine, me]);
 
+
+
+const meL = (address || '').toLowerCase();
+const canApprove = (l: any) =>
+  !l.repaid && !l.approved && meL && (
+    // member of that circle OR previously approved (allow re-approval ignore) — keep simple
+    myCircleIds.has(l.circleId.toLowerCase())
+  );
+
+  const canDisburse = (l: any) => !l.repaid && l.approved && meL; // any member/funder can disburse in this MVP
+const canRepay    = (l: any) => !l.repaid && meL && l.borrower.toLowerCase() === meL;
+
+const summary = {
+  totalCircles: myCircles.length,
+  totalLoans: myLoans.length,
+  needMyApproval: myLoans.filter(canApprove).length,
+  needMyDisbursal: myLoans.filter(canDisburse).length,
+  needMyRepay: myLoans.filter(canRepay).length,
+};
+
   return (
     
     <div className="space-y-8">
-
-
-   
-
-
-
-
     <div className="flex items-center gap-3">
     {address ? (
       <span className="text-xs text-gray-600">You are: {address}</span>
@@ -67,6 +86,9 @@ export default function DashboardClient({ data }: { data: { contract: `0x${strin
       {isLoading ? 'Refreshing…' : 'Refresh'}
     </button>
   </div>
+
+
+   <SummaryBar {...summary} />
 
       <div className="card p-6">
         <div className="flex items-center justify-between mb-3">
@@ -101,7 +123,12 @@ export default function DashboardClient({ data }: { data: { contract: `0x${strin
           <h2 className="text-lg font-semibold">Loans</h2>
           {isLoading && <span className="text-xs text-gray-500">Refreshing…</span>}
         </div>
-        <DashboardTable contract={rows.contract} rows={myLoans} />
+        <DashboardTable
+  contract={rows.contract}
+  rows={myLoans}
+  me={address as `0x${string}` | undefined}
+  myCircleIds={myCircleIds}  // ✅ THIS MUST BE PRESENT
+/>
       </div>
     </div>
   );
