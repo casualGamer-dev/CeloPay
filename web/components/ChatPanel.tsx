@@ -1,7 +1,11 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { publishPublicKey, fetchPeerPublicKeyB64, hasLocalKeypair, ensureLocalKeypair } from '../lib/pqc/keyStore';
+import {
+  publishPublicKey,
+  fetchPeerPublicKeyB64,
+  ensureLocalKeypair,
+} from '../lib/pqc/keyStore';
 import { deriveEncryptKeyWithPeer, deriveDecryptKeyFromKem } from '../lib/pqc/session';
 import { aesGcmEncrypt, aesGcmDecrypt, b64 } from '../lib/pqc/crypto';
 
@@ -24,7 +28,6 @@ export default function ChatPanel() {
   const { address, isConnected } = useAccount();
   const myAddr = (address || '').toLowerCase();
 
-  // Peer is user-input (the other wallet)
   const [peer, setPeer] = useState<string>('');
   const [peerPkB64, setPeerPkB64] = useState<string | null>(null);
 
@@ -33,28 +36,26 @@ export default function ChatPanel() {
   const [sessionKey, setSessionKey] = useState<CryptoKey | null>(null);
   const lastKemRef = useRef<{ kemCtB64: string; saltB64: string } | null>(null);
 
-  // --- On mount ensure a local PQC keypair exists (preserved in localStorage per Option A)
+  // Ensure keypair exists locally on mount
   useEffect(() => {
     (async () => {
       try {
-        // ensure keypair exists locally (generate once if absent)
         await ensureLocalKeypair();
       } catch (e) {
-        console.error('Failed ensuring local PQC keypair:', e);
+        console.error('ensureLocalKeypair failed', e);
       }
     })();
   }, []);
 
-  // Publish our PQC public key when wallet connects (or when address changes)
+  // Publish our PQC public key when wallet connects (or address changes)
   useEffect(() => {
     if (!isConnected || !isAddr(myAddr)) return;
-    // publish current local pubkey associated with wallet address
     publishPublicKey(myAddr).catch(err => {
       console.error('Failed to publish PQC public key:', err);
     });
   }, [isConnected, myAddr]);
 
-  // If wallet disconnects, hide messages and block chat UI but DO NOT remove local keypair
+  // If disconnected, clear transient UI state (but keep local keypair as per Option A)
   useEffect(() => {
     if (!isConnected) {
       setMessages([]);
@@ -88,7 +89,10 @@ export default function ChatPanel() {
     }
 
     tick();
-    return () => { stopped = true; if (timer) clearTimeout(timer); };
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [peer, isConnected]);
 
   // Load messages between myAddr and peer (only while connected)
@@ -109,7 +113,9 @@ export default function ChatPanel() {
     let t: any = null;
     loadMessages();
     t = setInterval(loadMessages, 2000);
-    return () => { if (t) clearInterval(t); };
+    return () => {
+      if (t) clearInterval(t);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, myAddr, peer]);
 
@@ -133,7 +139,7 @@ export default function ChatPanel() {
     })();
   }, [messages, isConnected, myAddr]);
 
-  // Send a message (first one attaches bootstrap if needed)
+  // SEND a message (first one attaches bootstrap if needed)
   async function send() {
     if (!isConnected) return;
     if (!isAddr(myAddr) || !isAddr(peer) || !peerPkB64 || !input.trim()) return;
@@ -168,13 +174,72 @@ export default function ChatPanel() {
       });
 
       setInput('');
-      await loadMessages(); // refresh once after send
+      await loadMessages(); // refresh after send
     } catch (e) {
       console.error('Failed sending message:', e);
     }
   }
 
-  // handle Enter key for message input
+  // ESTABLISH CHANNEL (the new Connect button's main work)
+  async function establishChannel() {
+    if (!isConnected) return;
+    if (!isAddr(myAddr) || !isAddr(peer)) {
+      alert('Please connect wallet and enter a valid peer wallet address (0x...)');
+      return;
+    }
+
+    try {
+      // Ensure local keypair and publish our public key (again, harmless)
+      await ensureLocalKeypair();
+      await publishPublicKey(myAddr);
+
+      // Try to fetch peer key
+      const pk = await fetchPeerPublicKeyB64(peer);
+      if (!pk) {
+        // Peer hasn't published yet; start polling (auto-poll effect will pick it up)
+        setPeerPkB64(null);
+        // Inform user
+        // (You may replace alert with a nicer toast in your UI)
+        alert('Peer key not found yet. We published your key and are waiting for the peer to join. They should open /chat to publish their key.');
+        return;
+      }
+
+      // Peer key exists: create KEM bootstrap and send a single empty-message bootstrap
+      const derived = await deriveEncryptKeyWithPeer(pk);
+      const aesKey = derived.aesKey;
+      const kemCtB64 = derived.kemCiphertextB64;
+      const saltB64 = derived.saltB64;
+
+      // Encrypt an empty string as the handshake bootstrap message
+      const { iv, ct } = await aesGcmEncrypt(aesKey, '');
+
+      const payload = {
+        from: myAddr,
+        to: peer,
+        ciphertextB64: b64.enc(ct),
+        ivB64: b64.enc(iv),
+        kemCtB64,
+        saltB64,
+      };
+
+      await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      // load messages and set sessionKey locally
+      setSessionKey(aesKey);
+      lastKemRef.current = { kemCtB64, saltB64 };
+      await loadMessages();
+      alert('Channel established — handshake message sent.');
+    } catch (e) {
+      console.error('Failed to establish channel:', e);
+      alert('Failed to establish channel — check console for details.');
+    }
+  }
+
+  // handle Enter key for input
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -192,6 +257,7 @@ export default function ChatPanel() {
           <div className="text-sm text-gray-500">Connected wallet (read-only):</div>
           <div className="font-mono text-xs">{isConnected ? myAddr : 'Not connected'}</div>
         </div>
+
         <div className="text-sm text-gray-600">
           {isConnected ? 'Connected' : 'Wallet disconnected — connect to access chat'}
         </div>
@@ -205,10 +271,26 @@ export default function ChatPanel() {
           onChange={e => setPeer(e.target.value)}
           disabled={!isConnected}
         />
-        <button className="btn" onClick={loadMessages} disabled={!isConnected || !isAddr(peer)}>Refresh</button>
-        {peerPkB64
-          ? <span className="text-xs px-2 py-1 rounded-lg bg-[var(--muted)] border">Peer key: loaded</span>
-          : <span className="text-xs px-2 py-1 rounded-lg border">{isConnected ? 'Waiting for peer key…' : '—'}</span>}
+
+        {/* NEW: Connect button to establish channel */}
+        <button
+          className="btn"
+          onClick={establishChannel}
+          disabled={!isConnected || !isAddr(peer)}
+          title="Publish your key and send handshake to peer (if peer key exists)"
+        >
+          Connect
+        </button>
+
+        <button className="btn" onClick={loadMessages} disabled={!isConnected || !isAddr(peer)}>
+          Refresh
+        </button>
+
+        {peerPkB64 ? (
+          <span className="text-xs px-2 py-1 rounded-lg bg-[var(--muted)] border">Peer key: loaded</span>
+        ) : (
+          <span className="text-xs px-2 py-1 rounded-lg border">{isConnected ? 'Waiting for peer key…' : '—'}</span>
+        )}
       </div>
 
       <div className="h-72 overflow-y-auto border rounded-xl p-3 bg-[var(--muted)]">
@@ -230,7 +312,9 @@ export default function ChatPanel() {
           onKeyDown={onKeyDown}
           disabled={!canChat}
         />
-        <button className="btn btn-primary" onClick={send} disabled={!canChat || !input.trim()}>Send</button>
+        <button className="btn btn-primary" onClick={send} disabled={!canChat || !input.trim()}>
+          Send
+        </button>
       </div>
     </div>
   );
@@ -241,7 +325,10 @@ function MessageBubble({ me, msg, sessionKey }: { me: boolean; msg: Msg; session
 
   useEffect(() => {
     (async () => {
-      if (!sessionKey) { setPlain('🔒 (waiting for session key)'); return; }
+      if (!sessionKey) {
+        setPlain('🔒 (waiting for session key)');
+        return;
+      }
       try {
         const iv = b64.dec(msg.ivB64);
         const ct = b64.dec(msg.ciphertextB64);

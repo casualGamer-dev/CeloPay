@@ -12,3 +12,21 @@ body { @apply bg-white text-gray-900; }
 .input { @apply w-full border border-gray-300 rounded-xl px-3 py-2; }
 .table { @apply w-full border-collapse; }
 th, td { @apply border-b border-gray-200 px-3 py-2 text-left; }
+
+.page-enter {
+  opacity: 0;
+  transform: translateY(5px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.hover-scale {
+  transition: transform 0.15s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
