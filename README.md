@@ -1,6 +1,6 @@
-# CeloPay (Web + PQC-Enabled Smart Contracts)
+# CeloPay (Web + PQC-Enabled Microcredits Environment)
 
-CeloPay is a community-powered **Buy Now, Pay Later (BNPL)** platform built on the **Celo blockchain**. It features a **Next.js + Tailwind CSS** web front-end, integrated with **smart contracts**, **WAGMI**, and **post-quantum (PQC) cryptographic sessions** for secure peer communication.
+CeloPay is a community-powered **Micro-credits : Banking for the unbanked** platform built on the **Celo blockchain**. It features a **Next.js + Tailwind CSS** web front-end, integrated with **smart contracts**, **WAGMI**, and **post-quantum (PQC) cryptographic sessions** for secure peer communication.
 
 ---
 
