@@ -5,9 +5,9 @@ pragma solidity ^0.8.24;
 import "./IERC20.sol";
 
 /**
- * NyaayaPay – Trust-circle micro BNPL demo (simplified). Not audited.
+ * CeloPay – Trust-circle micro BNPL demo (simplified). Not audited.
  */
-contract NyaayaPay {
+contract CeloPay {
     struct Circle { string name; string description; address createdBy; uint256 createdAt; bool exists; }
     struct LoanRequest {
         address borrower; bytes32 circleId; uint256 amount; uint8 installments; address[] approvals;

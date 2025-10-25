@@ -1,7 +1,7 @@
-# NyaayaPay Contracts (Standalone)
+# CeloPay Contracts (Standalone)
 
 - Hardhat (CommonJS), ethers v6
-- Deploys `NyaayaPay.sol` to Celo Alfajores
+- Deploys `CeloPay.sol` to Celo Alfajores
 
 ## Setup
 ```bash
@@ -16,4 +16,4 @@ npx hardhat compile
 npx hardhat run scripts/deploy.js --network alfajores
 ```
 
-The script prints the deployed address. Use it in your web app as `NEXT_PUBLIC_NYAAYA_ADDRESS`.
+The script prints the deployed address. Use it in your web app as `NEXT_PUBLIC_CELO_ADDRESS`.

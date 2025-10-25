@@ -22,6 +22,17 @@
       "status": "PENDING",
       "createdAt": 1761381116050,
       "dueDates": []
+    },
+    {
+      "id": "1761388023791-5agcblakol6",
+      "borrower": "0xB4fB12dFfcF9DbaFA0f270a97D9498251C4A79d6",
+      "circleId": "demo",
+      "amountCUSD": "100",
+      "installments": 4,
+      "approvals": [],
+      "status": "PENDING",
+      "createdAt": 1761388023791,
+      "dueDates": []
     }
   ]
 }

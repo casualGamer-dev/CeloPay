@@ -9,7 +9,7 @@ export default function Dashboard() {
   useEffect(()=>{ fetch('/api/loans').then(r=>r.json()).then(res=>{ if(res.ok) setLoans(res.data);}).finally(()=>setLoading(false));},[]);
   return (
     <div className="card p-6">
-      <h2 className="text-xl font-semibold mb-3">Loan Requests (JSON backend)</h2>
+      <h2 className="text-xl font-semibold mb-3">Loan Requests</h2>
       {loading ? <p>Loading…</p> : (
         <table className="table">
           <thead><tr><th>ID</th><th>Borrower</th><th>Circle</th><th>Amount (cUSD)</th><th>Installments</th><th>Status</th></tr></thead>

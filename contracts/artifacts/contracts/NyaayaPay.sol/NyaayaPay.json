@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-artifact-1",
-  "contractName": "NyaayaPay",
-  "sourceName": "contracts/NyaayaPay.sol",
+  "contractName": "CeloPay",
+  "sourceName": "contracts/CeloPay.sol",
   "abi": [
     {
       "inputs": [
