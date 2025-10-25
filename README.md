@@ -30,6 +30,9 @@ CeloPay is a community-powered **Buy Now, Pay Later (BNPL)** platform built on t
 - Supports secure messaging and ephemeral shared keys
 - Crypto workflow: `crypto.ts`, `kem.ts`, `keyStore.ts`, `session.ts`
 - Peer public keys exchanged and stored for secure sessions
+- Protocols used :
+- `CRYSTALS-Kyber 768` for key encapsulation
+- `AES GCM` for actual encryption cipher
 
 ### ✅ Web3 Integration
 - Wallet handling via **Wagmi + Viem**
