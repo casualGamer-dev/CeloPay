@@ -51,26 +51,46 @@ export default function VerifyPage() {
     return 35;
   }, [devBypass, isConnected, verifiedOverall, approved, humanVerified, score]);
 
+  // Local UI state to prevent duplicate approvals and show errors
+  const [approving, setApproving] = React.useState(false);
+  const [approveError, setApproveError] = React.useState<string | null>(null);
+
   // Auto-approval (skipped in dev bypass)
   React.useEffect(() => {
     const run = async () => {
       if (devBypass) return;
       if (!address || !humanVerified || approved) return;
+      if (approving) return;
+
+      setApproveError(null);
+      setApproving(true);
       try {
         const message = `Approve my wallet for borrowing: ${address}`;
         const signature = await signMessageAsync({ message });
-        await fetch('/api/policy/approve', {
+
+        const res = await fetch('/api/policy/approve', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ address, signature, message }),
+          body: JSON.stringify({ address, approve: true, message, signature }),
         });
+
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json?.ok === false) {
+          throw new Error(json?.error || `Approval failed with status ${res.status}`);
+        }
+
+        // success: refresh state
         window.dispatchEvent(new Event('verified:update'));
-      } catch {
-        /* user may cancel; ignore */
+        mutate(); // ensure SWR revalidates immediately
+      } catch (err: any) {
+        // Common cases: user cancels sign, invalid signature, server env missing
+        setApproveError(err?.message || 'Approval failed');
+      } finally {
+        setApproving(false);
       }
     };
     run();
-  }, [address, humanVerified, approved, signMessageAsync, devBypass]);
+  }, [address, humanVerified, approved, signMessageAsync, devBypass, approving, mutate]);
 
   return (
     <Container maxWidth="sm" sx={{ py: 6 }}>
@@ -128,12 +148,7 @@ export default function VerifyPage() {
                   label={approved ? 'Borrow Approval: Granted' : 'Borrow Approval: Pending'}
                 />
                 {devBypass && (
-                  <Chip
-                    size="small"
-                    color="success"
-                    variant="filled"
-                    label="DEV BYPASS"
-                  />
+                  <Chip size="small" color="success" variant="filled" label="DEV BYPASS" />
                 )}
               </Stack>
 
@@ -182,6 +197,8 @@ export default function VerifyPage() {
                       variant="outlined"
                       label="All set — you're verified & approved!"
                     />
+                  ) : approving ? (
+                    <Chip size="small" color="warning" variant="outlined" label="Approving on-chain…" />
                   ) : (
                     <Chip
                       size="small"
@@ -201,7 +218,7 @@ export default function VerifyPage() {
                 </Button>
               </Stack>
 
-              {/* Help text */}
+              {/* Help / Error text */}
               {!humanVerified && !devBypass && (
                 <Typography variant="body2" color="text.secondary">
                   Tip: Adding 3–5 reputable stamps (e.g., GitHub, Google, Phone, Discord) usually crosses the threshold quickly.
@@ -210,6 +227,11 @@ export default function VerifyPage() {
               {humanVerified && !approved && !devBypass && (
                 <Typography variant="body2" color="text.secondary">
                   After your score passes, we’ll ask you to sign a short message to confirm wallet ownership, then approve your wallet on-chain.
+                </Typography>
+              )}
+              {approveError && !devBypass && (
+                <Typography variant="body2" color="error">
+                  {approveError}
                 </Typography>
               )}
             </Stack>
