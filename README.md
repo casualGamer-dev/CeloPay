@@ -1,7 +1,13 @@
 # CeloPay (Web + PQC-Enabled Microcredits Environment)
 
 CeloPay is a community-powered **Micro-credits : Banking for the unbanked** platform built on the **Celo blockchain**. <br>
-People form and join credit circles --> request loans --> get them approved by trust anchors in the credit circle --> credited to their wallets --> pay it back --> earn trust and improve the chain! <br>
+---> People verify themselves (KYC) and link their wallet IDs <br> 
+---> form or join credit circles <br> 
+---> request loans <br> 
+---> get them approved by trust anchors in the credit circle <br> 
+---> credited to their wallets <br> 
+---> pay it back <br>
+---> earn trust and improve the chain! <br>
 It features a **Next.js + Tailwind CSS** web front-end, integrated with **smart contracts**, **WAGMI**, and **post-quantum (PQC) cryptographic sessions** for secure peer communication.
 
 ---
@@ -25,6 +31,7 @@ It features a **Next.js + Tailwind CSS** web front-end, integrated with **smart 
 - Core contract: `NyaayaPay.sol`
 - BNPL-style repayment mechanism
 - ERC20 support (ABI included)
+- Third Party KYC via Human Verification API
 - Ready for deployment to Celo testnets or mainnet
 
 ### ✅ Post-Quantum Cryptography (PQC)
