@@ -1,8 +1,8 @@
 'use client';
 
-import useSWR, { mutate } from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import { useAccount } from 'wagmi';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DashboardTable from './DashboardTable';
 import Copy from './Copy';
 import { short } from '../lib/utils';
@@ -27,7 +27,6 @@ import {
   TableRow,
   Paper,
   Chip,
-  Divider,
 } from '@mui/material';
 
 type CircleRow = { id: `0x${string}`; name: string; createdBy: `0x${string}`; members: `0x${string}`[]; };
@@ -46,14 +45,65 @@ export default function DashboardClient({
   const { address } = useAccount();
   const [onlyMine, setOnlyMine] = useState(true);
 
-  // live data (poll every 10s)
-  const { data: live, isLoading } = useSWR('/api/dashboard', fetcher, {
-    refreshInterval: 50_0000,
+  // Keep a stable snapshot that we only replace with "good" updates
+  const [stableRows, setStableRows] = useState(data);
+  const missesRef = useRef(0);
+
+  const {
+    data: live,
+    isLoading,
+    isValidating,
+    mutate,
+  } = useSWR('/api/dashboard', fetcher, {
+    // Poll gently; avoid duplicate revalidations
+    refreshInterval: 10_000,
+    dedupingInterval: 9_000,
+    // Keep previous data visible during background revalidations
+    keepPreviousData: true,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+    // Use initial server data as a fallback
     fallbackData: { ok: true, data },
   });
 
+  // Decide when an update is "good" enough to replace the stable snapshot.
+  useEffect(() => {
+    const next = live?.data;
+    if (!next) return;
+
+    const prev = stableRows;
+    const nextCircles = Array.isArray(next.circleRows) ? next.circleRows.length : 0;
+    const nextLoans   = Array.isArray(next.loanRows) ? next.loanRows.length : 0;
+
+    const prevCircles = Array.isArray(prev?.circleRows) ? prev.circleRows.length : 0;
+    const prevLoans   = Array.isArray(prev?.loanRows) ? prev.loanRows.length : 0;
+
+    const clearlyGood =
+      nextCircles > 0 || nextLoans > 0 || (prevCircles === 0 && prevLoans === 0);
+
+    if (clearlyGood) {
+      missesRef.current = 0;
+      setStableRows(next);
+      return;
+    }
+
+    // If payload is empty while we previously had data, treat as a transient miss.
+    // After a few consecutive misses, accept it (prevents permanent staleness).
+    if ((prevCircles + prevLoans) > 0 && (nextCircles + nextLoans) === 0) {
+      missesRef.current += 1;
+      if (missesRef.current >= 3) {
+        setStableRows(next);
+      }
+      return;
+    }
+
+    // Otherwise, accept the update (covers other edge cases)
+    setStableRows(next);
+  }, [live?.data, stableRows]);
+
   const me = (address || '').toLowerCase();
-  const rows = live?.data ?? data;
+
+  const rows = stableRows; // ← render from the stable snapshot
 
   const myCircles = useMemo(() => {
     if (!onlyMine || !me) return rows.circleRows;
@@ -75,12 +125,11 @@ export default function DashboardClient({
     );
   }, [rows.loanRows, myCircles, onlyMine, me]);
 
-  const meL = (address || '').toLowerCase();
-  const canApprove = (l: any) =>
-    !l.repaid && !l.approved && meL && myCircleIds.has(l.circleId.toLowerCase());
-
-  const canDisburse = (l: any) => !l.repaid && l.approved && meL;
-  const canRepay    = (l: any) => !l.repaid && meL && l.borrower.toLowerCase() === meL;
+  const meL = me;
+  const canApprove = (l: LoanRow) =>
+    !l.repaid && !l.approved && !!meL && myCircleIds.has(l.circleId.toLowerCase());
+  const canDisburse = (l: LoanRow) => !l.repaid && l.approved && !!meL;
+  const canRepay    = (l: LoanRow) => !l.repaid && !!meL && l.borrower.toLowerCase() === meL;
 
   const summary = {
     totalCircles: myCircles.length,
@@ -106,9 +155,7 @@ export default function DashboardClient({
                 size="small"
                 color={address ? 'success' : 'default'}
                 variant="outlined"
-                label={
-                  address ? `You: ${address}` : 'Connect wallet'
-                }
+                label={address ? `You: ${address}` : 'Connect wallet'}
               />
               <FormControlLabel
                 control={
@@ -119,14 +166,17 @@ export default function DashboardClient({
                 }
                 label={<Typography variant="body2">Only mine</Typography>}
               />
+              {isValidating && (
+                <Chip size="small" variant="outlined" label="Refreshing…" />
+              )}
             </Stack>
 
             <Button
               variant="contained"
-              onClick={() => mutate('/api/dashboard')}
-              disabled={isLoading}
+              onClick={() => mutate()} // local mutate from useSWR to revalidate
+              disabled={isLoading || isValidating}
             >
-              {isLoading ? 'Refreshing…' : 'Refresh'}
+              {isLoading || isValidating ? 'Refreshing…' : 'Refresh'}
             </Button>
           </Stack>
         </CardContent>
@@ -145,14 +195,10 @@ export default function DashboardClient({
             mb={2}
           >
             <Typography variant="h6">Circles</Typography>
-            {isLoading && (
-              <Typography variant="caption" color="text.secondary">
-                Refreshing…
-              </Typography>
-            )}
           </Stack>
 
-          {isLoading ? (
+          {/* Only show skeleton on very first load when there is no data at all */}
+          {!rows || (!rows.circleRows?.length && isLoading) ? (
             <Skeleton rows={4} />
           ) : myCircles.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
@@ -206,11 +252,6 @@ export default function DashboardClient({
             mb={2}
           >
             <Typography variant="h6">Loans</Typography>
-            {isLoading && (
-              <Typography variant="caption" color="text.secondary">
-                Refreshing…
-              </Typography>
-            )}
           </Stack>
 
           <DashboardTable
