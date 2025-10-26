@@ -182,6 +182,264 @@
       "artifacts": [
         "ProfileRegistry"
       ]
+    },
+    "D:\\CeloPay\\contracts\\contracts\\ChatStore.sol": {
+      "lastModificationDate": 1761440813812,
+      "contentHash": "d093323e09a8b5e496b2899d7dffd579",
+      "sourceName": "contracts/ChatStore.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ChatStore"
+      ]
+    },
+    "D:\\CeloPay\\contracts\\contracts\\IERC20.sol": {
+      "lastModificationDate": 1761440813818,
+      "contentHash": "3967a75c12c08826d8fed43cefa5ce76",
+      "sourceName": "contracts/IERC20.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IERC20"
+      ]
+    },
+    "D:\\CeloPay\\contracts\\contracts\\NyaayaPay.sol": {
+      "lastModificationDate": 1761440813826,
+      "contentHash": "86dd66a016f1399b6e9f119a7629294e",
+      "sourceName": "contracts/NyaayaPay.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "CeloPay"
+      ]
+    },
+    "D:\\CeloPay\\contracts\\contracts\\KeyRegistry.sol": {
+      "lastModificationDate": 1761440813820,
+      "contentHash": "e60ff58fc9fd9cdd83047b81fac31a5f",
+      "sourceName": "contracts/KeyRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "KeyRegistry"
+      ]
+    },
+    "D:\\CeloPay\\contracts\\contracts\\Policy.sol": {
+      "lastModificationDate": 1761440812021,
+      "contentHash": "0b04105867884fa53ef7132fd53bd40a",
+      "sourceName": "contracts/Policy.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "AllowlistPolicy"
+      ]
+    },
+    "D:\\CeloPay\\contracts\\contracts\\Pool.sol": {
+      "lastModificationDate": 1761440812008,
+      "contentHash": "cf045f562871b4bb9ae5b4a5f2c9253b",
+      "sourceName": "contracts/Pool.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "CeloPayPool",
+        "ERC20Receipt",
+        "IERC20",
+        "IPolicy",
+        "ReentrancyGuard"
+      ]
+    },
+    "D:\\CeloPay\\contracts\\contracts\\ProfileRegistry.sol": {
+      "lastModificationDate": 1761440813826,
+      "contentHash": "4b8a6171161ef6b6775bfdb167c9c32c",
+      "sourceName": "contracts/ProfileRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ProfileRegistry"
+      ]
     }
   }
 }

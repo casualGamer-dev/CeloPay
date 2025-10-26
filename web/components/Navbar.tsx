@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import * as React from 'react';
 import useSWR from 'swr';
-import HumanPassportButton from './HumanPassportButton';
-
+import { useAccount } from 'wagmi';
 import {
   AppBar,
   Toolbar,
@@ -14,21 +13,14 @@ import {
   Button,
   Typography,
   Chip,
-  Tooltip,
 } from '@mui/material';
 
 const fetcher = (u: string) => fetch(u).then(r => r.json());
 
 export default function Navbar({ right }: { right?: React.ReactNode }) {
-  const { data, mutate } = useSWR('/api/me', fetcher);
-
-  React.useEffect(() => {
-    const h = () => mutate();
-    window.addEventListener('verified:update', h);
-    return () => window.removeEventListener('verified:update', h);
-  }, [mutate]);
-
-  const verified = !!data?.verified;
+  const { address, isConnected } = useAccount();
+  const meKey = isConnected && address ? `/api/me?address=${address}` : null;
+  const { data: me } = useSWR(meKey, fetcher);
 
   return (
     <AppBar
@@ -65,22 +57,18 @@ export default function Navbar({ right }: { right?: React.ReactNode }) {
             <Stack direction="row" spacing={1} sx={{ display: { xs: 'none', md: 'flex' } }}>
               <Button component={Link} href="/dashboard" color="inherit">Dashboard</Button>
               <Button component={Link} href="/circles" color="inherit">Circles</Button>
-              <Button component={Link} href="/loans" color="inherit">Loans</Button>
+              <Button component={Link} href="/pool" color="inherit">Pool</Button>
               <Button component={Link} href="/chat" color="inherit">Chat</Button>
               <Button component={Link} href="/my" color="inherit">My Activity</Button>
             </Stack>
           </Box>
 
-          {/* Right side: Verify + whatever is passed in (e.g., <Connect/>) */}
+          {/* Right side */}
           <Stack direction="row" spacing={1.25} alignItems="center" sx={{ ml: 2 }}>
-            {verified ? (
-              <Chip size="small" color="success" variant="outlined" label="Human Verified" />
+            {me?.approved ? (
+              <Chip size="small" color="success" variant="outlined" label="✅ Human Verified" />
             ) : (
-              <Tooltip title="Human verification via Human Passport (Gitcoin Passport)">
-                <span>
-                  <HumanPassportButton size="small" />
-                </span>
-              </Tooltip>
+              <Chip size="small" variant="outlined" label="Verify" />
             )}
             {right}
           </Stack>

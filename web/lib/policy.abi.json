@@ -1,0 +1,4 @@
+[
+  { "type":"function","name":"approved","stateMutability":"view","inputs":[{"name":"user","type":"address"}],"outputs":[{"type":"bool"}]},
+  { "type":"function","name":"setApproved","stateMutability":"nonpayable","inputs":[{"name":"user","type":"address"},{"name":"status","type":"bool"}],"outputs":[]}
+]
