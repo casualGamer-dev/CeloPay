@@ -7,7 +7,7 @@ CeloPay is a community-powered **Micro-credits : Banking for the unbanked** plat
 ---> get them approved by trust anchors in the credit circle <br> 
 ---> credited to their wallets <br> 
 ---> pay it back <br>
----> earn trust and improve the chain! <br>
+---> earn trust and improve the chain :D <br>
 It features a **Next.js + Tailwind CSS** web front-end, integrated with **smart contracts**, **WAGMI**, and **post-quantum (PQC) cryptographic sessions** for secure peer communication.
 
 ---
