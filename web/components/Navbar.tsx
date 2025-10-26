@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import * as React from 'react';
 import useSWR from 'swr';
-import WorldVerifyButton from './WorldVerifyButton';
+import HumanPassportButton from './HumanPassportButton';
 
 import {
   AppBar,
@@ -74,11 +74,11 @@ export default function Navbar({ right }: { right?: React.ReactNode }) {
           {/* Right side: Verify + whatever is passed in (e.g., <Connect/>) */}
           <Stack direction="row" spacing={1.25} alignItems="center" sx={{ ml: 2 }}>
             {verified ? (
-              <Chip size="small" color="success" variant="outlined" label="Verified" />
+              <Chip size="small" color="success" variant="outlined" label="Human Verified" />
             ) : (
-              <Tooltip title="Private proof-of-personhood via World ID">
+              <Tooltip title="Human verification via Human Passport (Gitcoin Passport)">
                 <span>
-                  <WorldVerifyButton size="small" />
+                  <HumanPassportButton size="small" />
                 </span>
               </Tooltip>
             )}

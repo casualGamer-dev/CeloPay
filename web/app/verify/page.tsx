@@ -1,44 +1,49 @@
 'use client';
 
-import { Container, Card, CardContent, Stack, Typography } from '@mui/material';
-import Connect from '../../components/Connect';
-import WorldVerifyButton from '../../components/WorldVerifyButton';
-import useSWR from 'swr';
-import { useRouter } from 'next/navigation';
 import * as React from 'react';
+import { Button, Stack, Typography } from '@mui/material';
+import { useAccount } from 'wagmi';
 
-const fetcher = (u: string) => fetch(u).then(r => r.json());
+export default function HumanPassportButton({ size = 'small' }: { size?: 'small'|'medium'|'large' }) {
+  const { address, isConnected } = useAccount();
+  const [loading, setLoading] = React.useState(false);
+  const [score, setScore] = React.useState<number | null>(null);
+  const [passing, setPassing] = React.useState<boolean | null>(null);
 
-export default function VerifyPage() {
-  const router = useRouter();
-  const { data, mutate } = useSWR('/api/me', fetcher);
+  const openPassport = () => {
+    window.open('https://app.passport.xyz/', '_blank', 'noopener,noreferrer');
+  };
 
-  React.useEffect(() => {
-    const h = () => { mutate(); };
-    window.addEventListener('verified:update', h);
-    return () => window.removeEventListener('verified:update', h);
-  }, [mutate]);
-
-  const verified = !!data?.verified;
-
-  React.useEffect(() => {
-    if (verified) router.replace('/dashboard');
-  }, [verified, router]);
+  const refresh = async () => {
+    if (!address) return;
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/human/score?address=${address}`, { cache: 'no-store' });
+      const j = await r.json();
+      setScore(j?.score ?? null);
+      setPassing(!!j?.passing);
+      // Notify app to re-fetch /api/me (enables features everywhere)
+      window.dispatchEvent(new Event('verified:update'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 6 }}>
-      <Card>
-        <CardContent>
-          <Stack spacing={2} alignItems="center">
-            <Typography variant="h6">Access required</Typography>
-            <Typography variant="body2" color="text.secondary" align="center">
-              Please connect your wallet and complete World ID verification to access CeloPay.
-            </Typography>
-            <Connect />
-            <WorldVerifyButton />
-          </Stack>
-        </CardContent>
-      </Card>
-    </Container>
+    <Stack spacing={0.75} alignItems="flex-start">
+      <Stack direction="row" spacing={1}>
+        <Button variant="outlined" size={size} onClick={openPassport} disabled={!isConnected}>
+          Open Human Passport
+        </Button>
+        <Button variant="contained" size={size} onClick={refresh} disabled={!isConnected || loading}>
+          {loading ? 'Checking…' : 'Check my score'}
+        </Button>
+      </Stack>
+      {score !== null && (
+        <Typography variant="caption" color={passing ? 'success.main' : 'warning.main'}>
+          Score: {score} {passing ? '— passes' : '— add a few more stamps to pass'}
+        </Typography>
+      )}
+    </Stack>
   );
 }

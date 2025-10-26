@@ -7,7 +7,7 @@ import useSWR from 'swr';
 import { useAccount } from 'wagmi';
 
 import OnchainPanel from '../components/OnchainPanel';
-import WorldVerifyButton from '../components/WorldVerifyButton';
+import HumanPassportButton from '../components/HumanPassportButton';
 import Connect from '../components/Connect';
 
 import {
@@ -26,8 +26,11 @@ const fetcher = (u: string) => fetch(u).then(r => r.json());
 
 export default function Home() {
   const router = useRouter();
-  const { isConnected } = useAccount();
-  const { data, mutate } = useSWR('/api/me', fetcher);
+  const { address, isConnected } = useAccount();
+
+  // Pass address to /api/me so it can include Human Passport score checks
+  const meKey = isConnected && address ? `/api/me?address=${address}` : '/api/me';
+  const { data, mutate } = useSWR(meKey, fetcher);
   const verified = !!data?.verified;
 
   React.useEffect(() => {
@@ -54,7 +57,7 @@ export default function Home() {
 
             <Typography variant="body1" color="text.secondary">
               Form trust circles, request micro-credit, approve peers, disburse and repay using cUSD.
-              All actions require a connected wallet and a private proof-of-personhood (World ID).
+              To keep the network fair and Sybil-resistant, please verify once with <b>Human Passport</b>.
             </Typography>
 
             {/* Status + Quick Onboarding */}
@@ -76,7 +79,7 @@ export default function Home() {
                   size="small"
                   variant="outlined"
                   color={verified ? 'success' : 'default'}
-                  label={verified ? 'World ID: Verified' : 'World ID: Not verified'}
+                  label={verified ? 'Human Passport: Verified' : 'Human Passport: Not verified'}
                 />
               </Stack>
 
@@ -86,7 +89,7 @@ export default function Home() {
                 ) : verified ? (
                   <Chip size="small" color="success" variant="outlined" label="Ready to go" />
                 ) : (
-                  <WorldVerifyButton size="small" />
+                  <HumanPassportButton size="small" />
                 )}
               </Stack>
             </Stack>
@@ -98,7 +101,7 @@ export default function Home() {
                   actionsDisabled
                     ? !isConnected
                       ? 'Connect your wallet to continue'
-                      : 'Verify with World ID to continue'
+                      : 'Verify with Human Passport to continue'
                     : ''
                 }
               >
@@ -118,7 +121,7 @@ export default function Home() {
                   actionsDisabled
                     ? !isConnected
                       ? 'Connect your wallet to continue'
-                      : 'Verify with World ID to continue'
+                      : 'Verify with Human Passport to continue'
                     : ''
                 }
               >
@@ -133,7 +136,7 @@ export default function Home() {
                 </span>
               </Tooltip>
 
-              {/* Optional: always-visible links that will route to /verify if not ready */}
+              {/* Optional: always-visible link to onboarding */}
               <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <Button component={Link} href="/verify" color="inherit">
                   Verify / Connect
