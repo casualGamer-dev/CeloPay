@@ -48,7 +48,7 @@ export default function DashboardClient({
 
   // live data (poll every 10s)
   const { data: live, isLoading } = useSWR('/api/dashboard', fetcher, {
-    refreshInterval: 10_000,
+    refreshInterval: 50_0000,
     fallbackData: { ok: true, data },
   });
 
