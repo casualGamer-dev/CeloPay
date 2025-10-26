@@ -5,7 +5,12 @@ import poolAbi from './pool.abi.json';
 export const publicClient = createPublicClient({ chain: celoAlfajores, transport: http() });
 
 export const POOL_ADDRESS = process.env.NEXT_PUBLIC_POOL_ADDRESS as `0x${string}` | undefined;
-export const CUSD_ADDRESS = (process.env.NEXT_PUBLIC_CUSD_ADDRESS || '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1') as `0x${string}`;
+
+// ✅ Unified and defaulted cUSD address (same as PoolPage)
+export const CUSD_ADDRESS = (
+  process.env.NEXT_PUBLIC_CUSD_ADDRESS ||
+  '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1' // Default Alfajores cUSD
+) as `0x${string}`;
 
 export async function getPoolStats() {
   if (!POOL_ADDRESS) throw new Error('NEXT_PUBLIC_POOL_ADDRESS missing');
