@@ -58,6 +58,7 @@ export default function Navbar({ right }: { right?: React.ReactNode }) {
               <Button component={Link} href="/dashboard" color="inherit">Dashboard</Button>
               <Button component={Link} href="/circles" color="inherit">Circles</Button>
               <Button component={Link} href="/pool" color="inherit">Pool</Button>
+              <Button component={Link} href="/loans" color="inherit">loans</Button>
               <Button component={Link} href="/chat" color="inherit">Chat</Button>
               <Button component={Link} href="/my" color="inherit">My Activity</Button>
             </Stack>
