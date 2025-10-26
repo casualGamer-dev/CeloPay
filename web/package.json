@@ -27,7 +27,9 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hot-toast": "^2.6.0",
+    "react-tsparticles": "^2.12.2",
     "swr": "^2.3.6",
+    "tsparticles": "^3.9.1",
     "viem": "^2.9.0",
     "wagmi": "^2.12.7"
   },

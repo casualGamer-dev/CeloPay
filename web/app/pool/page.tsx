@@ -3,7 +3,11 @@
 import * as React from 'react';
 import useSWR from 'swr';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
-import { formatUnits, parseUnits } from 'viem';
+import { formatUnits, parseUnits, maxUint256, type Address } from 'viem';
+import { readContract, waitForTransactionReceipt } from 'wagmi/actions';
+
+import { config } from '../../lib/wagmi';
+
 import {
   Box,
   Button,
@@ -20,7 +24,8 @@ import {
 } from '@mui/material';
 
 import poolAbi from '../../lib/pool.abi.json';
-import { POOL_ADDRESS, getPoolStats } from '../../lib/pool';
+import erc20Abi from '../../lib/erc20.abi.json';
+import { POOL_ADDRESS, CUSD_ADDRESS, getPoolStats } from '../../lib/pool';
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
 
@@ -41,6 +46,9 @@ export default function PoolPage() {
 
   // ------- Read pool stats -------
   const [stats, setStats] = React.useState<any>(null);
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState<string | null>(null);
+
   const refreshStats = React.useCallback(() => {
     if (!POOL_ADDRESS) return;
     getPoolStats().then(setStats).catch(() => {});
@@ -94,6 +102,122 @@ export default function PoolPage() {
 
   const borrowAPRpct = stats ? rateToPct(stats.borrowAPR as bigint) : undefined;
   const supplyAPYpct = stats ? rateToPct(stats.supplyAPY as bigint) : undefined;
+
+  // ====== Allowance helper (for cUSD -> Pool) ======
+  const ensureAllowance = React.useCallback(
+    async (owner: Address, spender: Address, required: bigint) => {
+      // Read current allowance
+      const current = (await readContract(config, {
+        address: CUSD_ADDRESS as Address,
+        abi: erc20Abi as any,
+        functionName: 'allowance',
+        args: [owner, spender],
+      })) as bigint;
+
+      if (current >= required) return;
+
+      // Approve MaxUint for smoother UX; switch to `required` for tighter scope if needed.
+      const { hash } = await writeContract({
+        address: CUSD_ADDRESS as Address,
+        abi: erc20Abi as any,
+        functionName: 'approve',
+        args: [spender, maxUint256],
+      });
+
+      // Wait for mining before continuing to avoid "insufficient allowance"
+      await waitForTransactionReceipt(config, { hash });
+    },
+    [writeContract]
+  );
+
+  // ====== Action wrappers with approval for deposit/repay ======
+  const onDeposit = async () => {
+    if (!address || !parsed) return;
+    setErr(null);
+    setBusy(true);
+    try {
+      // deposit pulls cUSD from user -> needs allowance to POOL_ADDRESS
+      await ensureAllowance(address, POOL_ADDRESS as Address, parsed);
+
+      const { hash } = await writeContract({
+        address: POOL_ADDRESS!,
+        abi: poolAbi as any,
+        functionName: 'deposit',
+        args: [parsed],
+      });
+      await waitForTransactionReceipt(config, { hash });
+      refreshStats();
+    } catch (e: any) {
+      setErr(e?.shortMessage || e?.message || 'Deposit failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onWithdraw = async () => {
+    if (!parsed) return;
+    setErr(null);
+    setBusy(true);
+    try {
+      // withdraw sends cUSD to user -> no allowance needed
+      const { hash } = await writeContract({
+        address: POOL_ADDRESS!,
+        abi: poolAbi as any,
+        functionName: 'withdraw',
+        args: [parsed],
+      });
+      await waitForTransactionReceipt(config, { hash });
+      refreshStats();
+    } catch (e: any) {
+      setErr(e?.shortMessage || e?.message || 'Withdraw failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onBorrow = async () => {
+    if (!parsed || parsed > MAX_BORROW) return;
+    setErr(null);
+    setBusy(true);
+    try {
+      // borrow sends cUSD to user -> no allowance needed
+      const { hash } = await writeContract({
+        address: POOL_ADDRESS!,
+        abi: poolAbi as any,
+        functionName: 'borrow',
+        args: [parsed],
+      });
+      await waitForTransactionReceipt(config, { hash });
+      refreshStats();
+    } catch (e: any) {
+      setErr(e?.shortMessage || e?.message || 'Borrow failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onRepay = async () => {
+    if (!address || !parsed) return;
+    setErr(null);
+    setBusy(true);
+    try {
+      // repay pulls cUSD from user -> needs allowance to POOL_ADDRESS
+      await ensureAllowance(address, POOL_ADDRESS as Address, parsed);
+
+      const { hash } = await writeContract({
+        address: POOL_ADDRESS!,
+        abi: poolAbi as any,
+        functionName: 'repay',
+        args: [parsed],
+      });
+      await waitForTransactionReceipt(config, { hash });
+      refreshStats();
+    } catch (e: any) {
+      setErr(e?.shortMessage || e?.message || 'Repay failed');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
@@ -196,32 +320,22 @@ export default function PoolPage() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   size="small"
+                  disabled={busy}
                 />
-                <Button
-                  size="small"
-                  onClick={() => setAmount(String(maxBorrowNum))}
-                >
+                <Button size="small" onClick={() => setAmount(String(maxBorrowNum))} disabled={busy}>
                   Max Borrow
                 </Button>
-                <Button size="small" onClick={() => setAmount('0')}>Clear</Button>
+                <Button size="small" onClick={() => setAmount('0')} disabled={busy}>Clear</Button>
               </Stack>
 
               <Tooltip title={!isConnected ? 'Connect wallet first' : ''}>
                 <span>
                   <Button
                     variant="contained"
-                    disabled={disabled || !amount}
-                    onClick={() => {
-                      if (!parsed) return;
-                      writeContract({
-                        address: POOL_ADDRESS!,
-                        abi: poolAbi as any,
-                        functionName: 'deposit',
-                        args: [parsed],
-                      }, { onSuccess: refreshStats });
-                    }}
+                    disabled={disabled || !amount || busy}
+                    onClick={onDeposit}
                   >
-                    Deposit
+                    {busy ? 'Processing…' : 'Deposit'}
                   </Button>
                 </span>
               </Tooltip>
@@ -230,18 +344,10 @@ export default function PoolPage() {
                 <span>
                   <Button
                     variant="outlined"
-                    disabled={disabled || !amount}
-                    onClick={() => {
-                      if (!parsed) return;
-                      writeContract({
-                        address: POOL_ADDRESS!,
-                        abi: poolAbi as any,
-                        functionName: 'withdraw',
-                        args: [parsed],
-                      }, { onSuccess: refreshStats });
-                    }}
+                    disabled={disabled || !amount || busy}
+                    onClick={onWithdraw}
                   >
-                    Withdraw
+                    {busy ? 'Processing…' : 'Withdraw'}
                   </Button>
                 </span>
               </Tooltip>
@@ -251,18 +357,10 @@ export default function PoolPage() {
                   <Button
                     variant="contained"
                     color="secondary"
-                    disabled={disabled || !amount || parsed > MAX_BORROW}
-                    onClick={() => {
-                      if (!parsed || parsed > MAX_BORROW) return;
-                      writeContract({
-                        address: POOL_ADDRESS!,
-                        abi: poolAbi as any,
-                        functionName: 'borrow',
-                        args: [parsed],
-                      }, { onSuccess: refreshStats });
-                    }}
+                    disabled={disabled || !amount || parsed > MAX_BORROW || busy}
+                    onClick={onBorrow}
                   >
-                    Borrow
+                    {busy ? 'Processing…' : 'Borrow'}
                   </Button>
                 </span>
               </Tooltip>
@@ -272,24 +370,22 @@ export default function PoolPage() {
                   <Button
                     variant="outlined"
                     color="secondary"
-                    disabled={disabled || !amount}
-                    onClick={() => {
-                      if (!parsed) return;
-                      writeContract({
-                        address: POOL_ADDRESS!,
-                        abi: poolAbi as any,
-                        functionName: 'repay',
-                        args: [parsed],
-                      }, { onSuccess: refreshStats });
-                    }}
+                    disabled={disabled || !amount || busy}
+                    onClick={onRepay}
                   >
-                    Repay
+                    {busy ? 'Processing…' : 'Repay'}
                   </Button>
                 </span>
               </Tooltip>
 
-              <Button onClick={refreshStats}>Refresh</Button>
+              <Button onClick={refreshStats} disabled={busy}>Refresh</Button>
             </Stack>
+
+            {err && (
+              <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                {err}
+              </Typography>
+            )}
 
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
               Max borrowable from score: {maxBorrowNum} cUSD. Borrowing is gated by a one-time on-chain approval after Human Passport verification. Interest accrues continuously until you repay.
@@ -300,4 +396,3 @@ export default function PoolPage() {
     </Container>
   );
 }
-      
